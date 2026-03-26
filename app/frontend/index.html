@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI News Anchor | Informativo en directo</title>
+    <link rel="icon" type="image/png" href="/static/pictures/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600;6..72,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-mark">AN</div>
+                <div class="brand-copy">
+                    <span class="brand-kicker">Informativo IA</span>
+                    <h1>AI News Anchor</h1>
+                    <p>Un chat normal con formato de televisi&oacute;n en directo.</p>
+                </div>
+            </div>
+            <span class="live-pill">
+                <span class="live-dot" aria-hidden="true"></span>
+                En directo
+            </span>
+        </header>
+
+        <main class="workspace">
+            <section class="broadcast-stack" aria-label="Cobertura principal">
+                <section class="stage-media" aria-label="Pantalla de noticias">
+                    <div class="stage-media-heading">
+                        <span class="section-kicker">Pantalla central</span>
+                        <h2>La noticia aparece en grande y en el centro</h2>
+                    </div>
+
+                    <div class="stage-screen">
+                        <a id="featuredImageLink" class="featured-image-link hidden" href="#" target="_blank" rel="noreferrer">
+                            <img
+                                id="featuredImage"
+                                class="featured-image hidden"
+                                src=""
+                                alt="Imagen destacada de la noticia"
+                                referrerpolicy="no-referrer"
+                            >
+                        </a>
+
+                        <div id="featuredPlaceholder" class="featured-placeholder" aria-hidden="true"></div>
+
+                        <button type="button" id="channelPrevBtn" class="channel-nav channel-nav-left" aria-label="Canal anterior">
+                            &#10094;
+                        </button>
+
+                        <button type="button" id="channelNextBtn" class="channel-nav channel-nav-right" aria-label="Canal siguiente">
+                            &#10095;
+                        </button>
+
+                        <div class="screen-overlay">
+                            <div id="screenCopy" class="screen-copy">
+                                <div class="screen-copy-head">
+                                    <div class="screen-copy-live">
+                                        <span class="live-pill live-pill-screen">
+                                            <span class="live-dot" aria-hidden="true"></span>
+                                            En directo
+                                        </span>
+                                        <div class="screen-live-label">Temas en directo</div>
+                                    </div>
+
+                                    <div class="screen-copy-meta">
+                                        <span id="featuredEyebrow" class="screen-eyebrow">Canal IA</span>
+                                        <strong id="channelCounter">1 / 1</strong>
+                                    </div>
+                                </div>
+
+                                <strong id="featuredTitle" class="screen-copy-title">Escr&iacute;bele a la televisi&oacute;n y te respondo en directo</strong>
+                                <div id="screenLoadingRail" class="screen-loading-rail hidden" aria-hidden="true">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <div id="featuredBody" class="screen-body">
+                                    <p>El chat y la imagen grande trabajan juntos para seguir la noticia.</p>
+                                </div>
+                                <div class="screen-actions">
+                                    <a id="featuredLink" class="screen-action-link hidden" href="#" target="_blank" rel="noreferrer">
+                                        Abrir noticia
+                                    </a>
+                                    <button type="button" id="featuredResetBtn" class="screen-reset-btn">
+                                        Noticias del d&iacute;a
+                                    </button>
+                                </div>
+
+                                <section id="avatarContainer" class="presenter-inset" aria-label="Presentador IA">
+                                    <div class="assistant-stage">
+                                        <div class="assistant-stage-bg"></div>
+                                        <div id="avatar">
+                                            <div id="avatarHalo"></div>
+                                            <img id="baseFace" src="/static/pictures/eyes_open_mouth_closed.png" alt="Avatar del presentador IA">
+                                            <img id="mouthOpenImg" src="/static/pictures/eyes_open_mouth_open.png" alt="">
+                                        </div>
+                                    </div>
+
+                                    <div class="assistant-details">
+                                        <div id="avatarName">Presentador IA</div>
+                                        <div id="avatarStatus">En directo</div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="live-chat" id="chatSection">
+                    <div class="chat-panel-heading">
+                        <div class="chat-panel-copy">
+                            <span class="section-kicker">Chat</span>
+                            <h2>Habla con la emisi&oacute;n</h2>
+                            <p>El chat queda justo debajo de la pantalla, con el formato cl&aacute;sico de conversaci&oacute;n.</p>
+                        </div>
+
+                        <span class="chat-surface-status">Se&ntilde;al estable</span>
+                    </div>
+
+                    <div class="chat-surface">
+                        <div class="chat-empty" id="chatEmpty">
+                            <span class="chat-empty-kicker">Redacci&oacute;n activa</span>
+                            <h3>Pregunta por una noticia, un pa&iacute;s o un tema concreto.</h3>
+                            <p>Ejemplos: &ldquo;&Uacute;ltimas noticias sobre OpenAI&rdquo;, &ldquo;Qu&eacute; est&aacute; pasando en Espa&ntilde;a&rdquo; o &ldquo;Mu&eacute;strame im&aacute;genes de esta noticia&rdquo;.</p>
+                        </div>
+
+                        <div class="chat-container" id="chatContainer" aria-live="polite"></div>
+                    </div>
+
+                    <div class="composer-panel">
+                        <div class="chat-activity" id="chatActivity">
+                            <span class="activity-dot" aria-hidden="true"></span>
+                            <span id="chatActivityText">Pregunta por una noticia, un tema o un pa&iacute;s</span>
+                        </div>
+
+                        <div class="input-container">
+                            <input type="text" id="userInput" placeholder="Ejemplo: res&uacute;meme las noticias de tecnolog&iacute;a">
+                            <button type="button" id="sendBtn">Enviar</button>
+                            <button type="button" id="clearBtn">Borrar</button>
+                        </div>
+                    </div>
+                </section>
+                <section class="bottom-bar" aria-label="Informaci&oacute;n adicional">
+                    <div class="bottom-bar-copy">
+                        <span class="section-kicker">Funciones</span>
+                        <h3>Accesos r&aacute;pidos para mover la emisi&oacute;n</h3>
+                        <p>Debajo del chat tienes las funciones principales para pedir titulares, contexto o im&aacute;genes.</p>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button type="button" class="quick-action" data-prompt="Dime las noticias m&aacute;s importantes del d&iacute;a">Titulares del d&iacute;a</button>
+                        <button type="button" class="quick-action" data-prompt="Qu&eacute; est&aacute; pasando hoy en Espa&ntilde;a">Espa&ntilde;a</button>
+                        <button type="button" class="quick-action" data-prompt="&Uacute;ltimas noticias de tecnolog&iacute;a">Tecnolog&iacute;a</button>
+                        <button type="button" class="quick-action" data-prompt="Resumen de econom&iacute;a">Econom&iacute;a</button>
+                        <button type="button" class="quick-action" data-prompt="Expl&iacute;camelo f&aacute;cil: lo m&aacute;s importante del d&iacute;a">Expl&iacute;camelo f&aacute;cil</button>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <div id="imageViewer" class="hidden img-viewer">
+        <button type="button" id="closeViewer" class="viewer-close" aria-label="Cerrar visor">
+            Cerrar
+        </button>
+        <button type="button" id="viewerLeft" class="nav left" aria-label="Imagen anterior">&#10094;</button>
+        <img id="viewerImg" alt="Vista ampliada de la noticia" referrerpolicy="no-referrer">
+        <button type="button" id="viewerRight" class="nav right" aria-label="Imagen siguiente">&#10095;</button>
+    </div>
+
+    <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

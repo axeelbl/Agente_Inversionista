@@ -1,0 +1,264 @@
+@media (max-width: 1120px) {
+    .stage-screen {
+        height: clamp(460px, 68vw, 840px);
+    }
+}
+
+@media (max-width: 820px) {
+    body {
+        padding: 10px;
+    }
+
+    .app-shell {
+        min-height: calc(100vh - 20px);
+        padding: 14px;
+    }
+
+    .brand {
+        flex-direction: column;
+    }
+
+    .stage-media,
+    .live-chat,
+    .bottom-bar {
+        padding: 16px;
+    }
+
+    .chat-panel-heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chat-surface-status {
+        align-self: flex-start;
+    }
+
+    .screen-live-label {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 760px) {
+    :root {
+        --presenter-width: clamp(136px, 24vw, 184px);
+    }
+
+    body {
+        padding: 0;
+    }
+
+    .app-shell {
+        min-height: 100vh;
+        border-radius: 0;
+        border: 0;
+        padding: 12px;
+    }
+
+    .app-header,
+    .stage-media,
+    .live-chat,
+    .bottom-bar {
+        padding: 14px;
+    }
+
+    .brand {
+        align-items: center;
+    }
+
+    .brand-copy h1 {
+        font-size: 1.7rem;
+    }
+
+    .stage-screen {
+        height: clamp(500px, 96vw, 700px);
+    }
+
+    .stage-media-heading h2,
+    .chat-panel-copy h2,
+    .chat-empty h3,
+    .bottom-bar-copy h3 {
+        font-size: 1.8rem;
+    }
+
+    .screen-overlay {
+        inset: 12px;
+    }
+
+    .screen-copy-head {
+        gap: 12px;
+    }
+
+    .screen-live-label {
+        font-size: 1.05rem;
+    }
+
+    .screen-copy-meta {
+        min-width: 96px;
+    }
+
+    .screen-copy-title {
+        font-size: 1.55rem;
+        max-width: 13ch;
+    }
+
+    .screen-copy {
+        grid-template-columns: minmax(0, 1fr) minmax(136px, var(--presenter-width));
+        height: 100%;
+        min-height: 100%;
+        padding: 18px;
+        column-gap: 18px;
+    }
+
+    .screen-body {
+        padding-right: 6px;
+    }
+
+    .assistant-stage {
+        min-height: 180px;
+    }
+
+    #avatar {
+        width: clamp(104px, 16vw, 150px);
+    }
+
+    .channel-nav {
+        width: 48px;
+        height: 48px;
+        font-size: 1.4rem;
+    }
+
+    .channel-nav-left {
+        left: 10px;
+    }
+
+    .channel-nav-right {
+        right: 10px;
+    }
+
+    .chat-container {
+        min-height: 220px;
+        max-height: min(46vh, 500px);
+    }
+
+    .message,
+    .chat-gallery,
+    .news-deck {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .input-container {
+        grid-template-columns: 1fr;
+    }
+
+    #sendBtn,
+    #clearBtn {
+        min-height: 48px;
+    }
+
+    .quick-actions,
+    .news-grid,
+    .photo-gallery {
+        grid-template-columns: 1fr;
+    }
+
+    .viewer-close {
+        top: 14px;
+        right: 14px;
+    }
+
+    .left {
+        left: 12px;
+    }
+
+    .right {
+        right: 12px;
+    }
+}
+
+@media (max-width: 520px) {
+    :root {
+        --presenter-width: 104px;
+    }
+
+    .brand-mark {
+        width: 46px;
+        height: 46px;
+    }
+
+    .stage-screen {
+        height: clamp(520px, 132vw, 760px);
+    }
+
+    .screen-copy-title {
+        font-size: 1.3rem;
+        max-width: 100%;
+    }
+
+    .screen-live-label {
+        font-size: 0.95rem;
+    }
+
+    .screen-overlay {
+        inset: 10px;
+    }
+
+    #channelCounter {
+        font-size: 1rem;
+    }
+
+    .channel-nav {
+        width: 42px;
+        height: 42px;
+        font-size: 1.2rem;
+    }
+
+    .screen-copy {
+        grid-template-columns: minmax(0, 1fr) var(--presenter-width);
+        grid-template-areas:
+            "head presenter"
+            "title presenter"
+            "loading presenter"
+            "body body"
+            "actions actions";
+        height: 100%;
+        min-height: 100%;
+        padding: 16px;
+        column-gap: 14px;
+        row-gap: 12px;
+    }
+
+    .screen-copy-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-bottom: 12px;
+    }
+
+    .screen-copy-meta {
+        min-width: 0;
+        justify-items: start;
+        text-align: left;
+    }
+
+    .screen-body {
+        padding-right: 4px;
+    }
+
+    .assistant-stage {
+        min-height: 146px;
+        padding: 8px;
+    }
+
+    #avatar {
+        width: 92px;
+    }
+
+    .assistant-details {
+        gap: 6px;
+    }
+
+    #avatarStatus {
+        padding: 6px 10px;
+    }
+}

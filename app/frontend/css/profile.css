@@ -1,0 +1,24 @@
+#profileLinks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+#profileLinks button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(17, 46, 69, 0.82);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+#profileLinks button:hover,
+#profileLinks button:focus-visible {
+    border-color: var(--line-strong);
+}

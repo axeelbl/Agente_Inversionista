@@ -1,0 +1,46 @@
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.12);
+        opacity: 0.82;
+    }
+}
+
+@keyframes stageDrift {
+    0% {
+        transform: scale(1.04) translate3d(-1.2%, 0, 0);
+    }
+
+    100% {
+        transform: scale(1.1) translate3d(1.2%, -1.2%, 0);
+    }
+}
+
+@keyframes caretBlink {
+    0%,
+    49% {
+        opacity: 1;
+    }
+
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
