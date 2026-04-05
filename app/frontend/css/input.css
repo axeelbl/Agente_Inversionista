@@ -11,20 +11,20 @@
     border-radius: 16px;
     border: 1px solid var(--line);
     background:
-        linear-gradient(180deg, rgba(6, 16, 28, 0.98), rgba(7, 18, 31, 0.98)),
-        linear-gradient(90deg, rgba(93, 198, 255, 0.05), transparent);
+        linear-gradient(180deg, rgba(6, 16, 12, 0.98), rgba(7, 18, 14, 0.98)),
+        linear-gradient(90deg, rgba(124, 230, 175, 0.05), transparent);
     color: var(--text);
     font-size: 0.96rem;
     outline: none;
 }
 
 #userInput::placeholder {
-    color: rgba(163, 182, 203, 0.76);
+    color: rgba(155, 183, 168, 0.76);
 }
 
 #userInput:focus {
-    border-color: rgba(93, 198, 255, 0.46);
-    box-shadow: 0 0 0 4px rgba(93, 198, 255, 0.1);
+    border-color: rgba(124, 230, 175, 0.46);
+    box-shadow: 0 0 0 4px rgba(124, 230, 175, 0.1);
 }
 
 #sendBtn,
@@ -38,13 +38,13 @@
 }
 
 #sendBtn {
-    background: linear-gradient(135deg, var(--accent), #209ce1);
-    color: #03101a;
-    box-shadow: 0 12px 24px rgba(93, 198, 255, 0.2);
+    background: linear-gradient(135deg, var(--accent), #53c98c);
+    color: #04100a;
+    box-shadow: 0 12px 24px rgba(124, 230, 175, 0.2);
 }
 
 #clearBtn {
-    background: rgba(14, 29, 46, 0.92);
+    background: rgba(14, 29, 22, 0.92);
     color: var(--text);
     border-color: var(--line);
 }

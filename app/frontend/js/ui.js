@@ -1,4 +1,6 @@
-const BOT_LABEL = "Presentador IA";
+import { buildChartSvg, formatCompactNumber, formatCurrency, formatPercent, getChartDirection } from "./chart-utils.js";
+
+const BOT_LABEL = "Analista IA";
 
 export class ChatUI {
     constructor(chatContainer, userInput, sendBtn, clearBtn) {
@@ -12,9 +14,12 @@ export class ChatUI {
         this.featuredImage = document.getElementById("featuredImage");
         this.featuredImageLink = document.getElementById("featuredImageLink");
         this.featuredPlaceholder = document.getElementById("featuredPlaceholder");
+        this.featuredChart = document.getElementById("featuredChart");
+        this.featuredStats = document.getElementById("featuredStats");
         this.featuredEyebrow = document.getElementById("featuredEyebrow");
         this.featuredTitle = document.getElementById("featuredTitle");
         this.featuredBody = document.getElementById("featuredBody");
+        this.featuredStage = this.featuredChart?.closest(".stage-screen") || null;
         this.screenCopy = document.getElementById("screenCopy");
         this.screenLoadingRail = document.getElementById("screenLoadingRail");
         this.featuredLink = document.getElementById("featuredLink");
@@ -27,9 +32,11 @@ export class ChatUI {
         this.afterScreenReset = null;
 
         this.defaultFeaturedState = {
-            eyebrow: "Canal IA",
-            title: "Cargando los temas en directo",
-            body: "Estoy preparando la emisi\u00f3n para que puedas cambiar de noticia como si cambiaras de canal.",
+            eyebrow: "Panel IA",
+            title: "Cargando el pulso del mercado",
+            body: "Estoy preparando un resumen visual de activos, contexto y oportunidades para que puedas cambiar de panel sin salir del chat.",
+            asset: null,
+            chart: null,
         };
 
         this.clearBtn.addEventListener("click", () => this.clearChat());
@@ -52,7 +59,7 @@ export class ChatUI {
         this.afterScreenReset = handler;
     }
 
-    createMessage(role, label = role === "user" ? "T\u00fa" : BOT_LABEL) {
+    createMessage(role, label = role === "user" ? "Tú" : BOT_LABEL) {
         const wrapper = document.createElement("article");
         wrapper.classList.add("message", role);
 
@@ -74,14 +81,48 @@ export class ChatUI {
         }).format(new Date());
     }
 
-    scrollToBottom() {
-        this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+    scrollToBottom({ deferred = false } = {}) {
+        const scroll = () => {
+            if (!this.chatContainer) return;
+            this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+        };
+
+        scroll();
+
+        if (deferred) {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(scroll);
+            });
+        }
     }
 
     appendBlock(node) {
         this.chatContainer.appendChild(node);
         this.toggleEmptyState();
-        this.scrollToBottom();
+        this.scrollToBottom({ deferred: true });
+
+        node.querySelectorAll("img").forEach((image) => {
+            image.addEventListener("load", () => this.scrollToBottom({ deferred: true }), {
+                once: true,
+            });
+            image.addEventListener("error", () => this.scrollToBottom({ deferred: true }), {
+                once: true,
+            });
+        });
+    }
+
+    focusBlock(node, { block = "start" } = {}) {
+        if (!node) return;
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                node.scrollIntoView({
+                    behavior: "auto",
+                    block,
+                    inline: "nearest",
+                });
+            });
+        });
     }
 
     addUserMessage(text) {
@@ -235,14 +276,26 @@ export class ChatUI {
         lastNode.appendChild(this.createCaret());
     }
 
-    showFeaturedState({ eyebrow, title, body, caption, imageUrl, linkUrl, linkLabel, isLoading = false } = {}) {
+    showFeaturedState({
+        eyebrow,
+        title,
+        body,
+        imageUrl,
+        linkUrl,
+        linkLabel,
+        chart,
+        asset,
+        isLoading = false,
+    } = {}) {
         const nextState = {
             ...this.defaultFeaturedState,
             eyebrow,
             title,
-            body: body ?? caption ?? this.defaultFeaturedState.body,
+            body: body ?? this.defaultFeaturedState.body,
             linkUrl,
             linkLabel,
+            chart,
+            asset,
             isLoading,
         };
 
@@ -259,18 +312,110 @@ export class ChatUI {
         }
 
         this.setFeaturedLoading(Boolean(nextState.isLoading));
-        this.setFeaturedLink(nextState.linkUrl, nextState.linkLabel);
+        this.setFeaturedLink(nextState.linkUrl, nextState.linkLabel || "Ver activo");
+        this.setFeaturedStats(asset, chart);
+
+        if (chart?.points?.length) {
+            this.showFeaturedChart(chart);
+            return;
+        }
 
         if (imageUrl) {
             this.showFeaturedImage(imageUrl);
             return;
         }
 
+        this.hideFeaturedVisuals();
+    }
+
+    setFeaturedStats(asset, chart) {
+        if (!this.featuredStats) return;
+
+        const chips = [];
+
+        if (asset?.price !== null && asset?.price !== undefined) {
+            chips.push({
+                label: "Precio",
+                value: formatCurrency(asset.price, asset.currency),
+                tone: "neutral",
+            });
+        }
+
+        if (asset?.change_percent !== null && asset?.change_percent !== undefined) {
+            const changeTone = asset.change_percent >= 0 ? "positive" : "negative";
+            chips.push({
+                label: "Día",
+                value: formatPercent(asset.change_percent),
+                tone: changeTone,
+            });
+        }
+
+        if (chart?.summary?.change_percent !== null && chart?.summary?.change_percent !== undefined) {
+            const chartTone = chart.summary.change_percent >= 0 ? "positive" : "negative";
+            chips.push({
+                label: chart.range || "Rango",
+                value: formatPercent(chart.summary.change_percent),
+                tone: chartTone,
+            });
+        }
+
+        if (asset?.market_cap) {
+            chips.push({
+                label: "Cap.",
+                value: formatCompactNumber(asset.market_cap),
+                tone: "neutral",
+            });
+        }
+
+        if (!chips.length) {
+            this.featuredStats.innerHTML = "";
+            this.featuredStats.classList.add("hidden");
+            return;
+        }
+
+        this.featuredStats.innerHTML = "";
+        chips.forEach((chip) => {
+            const item = document.createElement("div");
+            item.className = `stat-chip stat-chip-${chip.tone}`;
+
+            const label = document.createElement("span");
+            label.className = "stat-chip-label";
+            label.textContent = chip.label;
+
+            const value = document.createElement("strong");
+            value.className = "stat-chip-value";
+            value.textContent = chip.value;
+
+            item.append(label, value);
+            this.featuredStats.appendChild(item);
+        });
+        this.featuredStats.classList.remove("hidden");
+    }
+
+    setFeaturedVisualMode(mode = "default") {
+        const hasChart = mode === "chart";
+        this.featuredStage?.classList.toggle("has-chart", hasChart);
+        this.screenCopy?.classList.toggle("has-chart", hasChart);
+    }
+
+    showFeaturedChart(chart) {
+        if (!this.featuredChart) return;
+
+        const direction = getChartDirection(chart);
+        this.featuredChart.innerHTML = buildChartSvg(chart, { compact: true });
+        this.featuredChart.classList.remove("hidden");
+        this.featuredChart.dataset.direction = direction;
+        this.setFeaturedVisualMode("chart");
         this.hideFeaturedImage();
+        this.featuredPlaceholder?.classList.add("hidden");
     }
 
     showFeaturedImage(imageUrl) {
         if (!this.featuredImage || !this.featuredPlaceholder) return;
+
+        this.setFeaturedVisualMode("image");
+        this.featuredChart?.classList.add("hidden");
+        this.featuredChart && (this.featuredChart.innerHTML = "");
 
         const requestId = ++this.featuredRequestId;
 
@@ -283,7 +428,7 @@ export class ChatUI {
 
         this.featuredImage.onerror = () => {
             if (requestId !== this.featuredRequestId) return;
-            this.hideFeaturedImage();
+            this.hideFeaturedVisuals();
         };
 
         this.featuredImage.src = imageUrl;
@@ -306,10 +451,16 @@ export class ChatUI {
         if (this.featuredImageLink) {
             this.featuredImageLink.classList.add("hidden");
         }
+    }
 
-        if (this.featuredPlaceholder) {
-            this.featuredPlaceholder.classList.remove("hidden");
+    hideFeaturedVisuals() {
+        this.setFeaturedVisualMode("default");
+        this.hideFeaturedImage();
+        if (this.featuredChart) {
+            this.featuredChart.classList.add("hidden");
+            this.featuredChart.innerHTML = "";
         }
+        this.featuredPlaceholder?.classList.remove("hidden");
     }
 
     resetFeaturedState() {
@@ -318,7 +469,7 @@ export class ChatUI {
         this.setChannelNavigationEnabled(false);
     }
 
-    setFeaturedLink(linkUrl, linkLabel = "Abrir noticia") {
+    setFeaturedLink(linkUrl, linkLabel = "Ver activo") {
         if (!this.featuredLink) return;
 
         if (!linkUrl) {
@@ -360,8 +511,8 @@ export class ChatUI {
 
         if (this.chatActivityText) {
             this.chatActivityText.textContent = isPending
-                ? "Estoy preparando el bolet\u00edn"
-                : "Pregunta por una noticia, un tema o un pa\u00eds";
+                ? "Analizando mercado, contexto y riesgo"
+                : "Pregunta por un activo, un ETF o un plan de inversión";
         }
     }
 
@@ -371,7 +522,7 @@ export class ChatUI {
     }
 
     clearChat() {
-        if (!confirm("\u00bfSeguro que quieres borrar la conversaci\u00f3n?")) return;
+        if (!confirm("¿Seguro que quieres borrar la conversación?")) return;
         this.chatContainer.innerHTML = "";
         this.userInput.value = "";
         this.setPendingState(false);

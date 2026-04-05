@@ -1,19 +1,20 @@
 :root {
     color-scheme: dark;
-    --bg: #050b14;
-    --surface: rgba(10, 17, 30, 0.88);
-    --surface-soft: rgba(15, 27, 46, 0.88);
-    --surface-card: rgba(11, 22, 38, 0.94);
-    --surface-card-soft: rgba(18, 34, 56, 0.9);
-    --text: #f4f8ff;
-    --text-soft: #a6b7ca;
-    --text-muted: #73859b;
-    --line: rgba(121, 156, 191, 0.18);
-    --line-strong: rgba(126, 190, 232, 0.34);
-    --accent: #64c8ff;
-    --accent-strong: #a0e5ff;
-    --success: #6fe0af;
-    --danger: #ff8a82;
+    --bg: #07110d;
+    --surface: rgba(10, 20, 16, 0.88);
+    --surface-soft: rgba(14, 27, 22, 0.88);
+    --surface-card: rgba(12, 25, 20, 0.94);
+    --surface-card-soft: rgba(18, 38, 30, 0.9);
+    --text: #effbf3;
+    --text-soft: #9bb7a8;
+    --text-muted: #6b8478;
+    --line: rgba(128, 181, 154, 0.18);
+    --line-strong: rgba(126, 220, 173, 0.34);
+    --accent: #7ce6af;
+    --accent-strong: #c4ffe0;
+    --success: #7ce6af;
+    --warning: #f4c96a;
+    --danger: #ff8d7d;
     --shadow-shell: 0 30px 80px rgba(0, 0, 0, 0.42);
     --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.26);
     --shell-max-width: 1760px;
@@ -39,9 +40,9 @@ body {
     font-family: "Space Grotesk", "Segoe UI", sans-serif;
     color: var(--text);
     background:
-        radial-gradient(circle at top left, rgba(100, 200, 255, 0.16), transparent 22%),
-        radial-gradient(circle at 80% 0%, rgba(255, 154, 138, 0.1), transparent 16%),
-        linear-gradient(180deg, #03070d 0%, #08111c 48%, #040913 100%);
+        radial-gradient(circle at top left, rgba(124, 230, 175, 0.16), transparent 22%),
+        radial-gradient(circle at 100% 0%, rgba(244, 201, 106, 0.12), transparent 16%),
+        linear-gradient(180deg, #040a07 0%, #08120e 48%, #050b08 100%);
 }
 
 a {
@@ -74,11 +75,11 @@ input {
     grid-template-rows: auto minmax(0, 1fr);
     gap: clamp(18px, 1.4vw, 26px);
     padding: clamp(18px, 1.5vw, 28px);
-    border: 1px solid rgba(123, 158, 194, 0.14);
+    border: 1px solid rgba(124, 185, 157, 0.14);
     border-radius: 28px;
     background:
-        linear-gradient(180deg, rgba(9, 15, 27, 0.96), rgba(5, 10, 18, 0.96)),
-        linear-gradient(180deg, rgba(100, 200, 255, 0.04), transparent);
+        linear-gradient(180deg, rgba(9, 18, 14, 0.96), rgba(6, 12, 9, 0.96)),
+        linear-gradient(180deg, rgba(124, 230, 175, 0.04), transparent);
     box-shadow: var(--shadow-shell);
 }
 
@@ -117,9 +118,9 @@ input {
     height: 52px;
     border-radius: 16px;
     background:
-        radial-gradient(circle at 30% 30%, rgba(160, 229, 255, 0.3), transparent 56%),
-        linear-gradient(145deg, rgba(12, 25, 40, 0.98), rgba(18, 55, 84, 0.92));
-    border: 1px solid rgba(160, 229, 255, 0.24);
+        radial-gradient(circle at 30% 30%, rgba(196, 255, 224, 0.28), transparent 56%),
+        linear-gradient(145deg, rgba(11, 25, 19, 0.98), rgba(20, 67, 48, 0.92));
+    border: 1px solid rgba(196, 255, 224, 0.2);
     color: var(--text);
     font-size: 1rem;
     font-weight: 700;
@@ -134,7 +135,8 @@ input {
 .brand-kicker,
 .section-kicker,
 .chat-empty-kicker,
-.screen-eyebrow {
+.screen-eyebrow,
+.panel-kicker {
     display: inline-flex;
     align-items: center;
     font-size: 0.72rem;
@@ -151,9 +153,9 @@ input {
 .bottom-bar-copy h3,
 #avatarName {
     margin: 0;
-    font-family: "Newsreader", Georgia, serif;
+    font-family: "Sora", "Segoe UI", sans-serif;
     font-weight: 700;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.04em;
 }
 
 .brand-copy h1 {
@@ -165,7 +167,8 @@ input {
 .stage-media-heading p,
 .chat-panel-copy p,
 .chat-empty p,
-.bottom-bar-copy p {
+.bottom-bar-copy p,
+.panel-subtitle {
     margin: 4px 0 0;
     color: var(--text-soft);
     font-size: 0.95rem;
@@ -178,9 +181,9 @@ input {
     gap: 8px;
     padding: 8px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 138, 130, 0.24);
-    background: rgba(67, 18, 18, 0.5);
-    color: #ffe3df;
+    border: 1px solid rgba(124, 230, 175, 0.22);
+    background: rgba(17, 54, 35, 0.5);
+    color: #dffbec;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.14em;
@@ -192,8 +195,8 @@ input {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #ff6d5f;
-    box-shadow: 0 0 0 6px rgba(255, 109, 95, 0.12);
+    background: var(--success);
+    box-shadow: 0 0 0 6px rgba(124, 230, 175, 0.12);
     animation: pulse 1.4s ease-in-out infinite;
 }
 
@@ -245,7 +248,8 @@ button:hover {
 
 .stage-media-heading h2 {
     font-size: clamp(2.5rem, 4vw, 4.2rem);
-    line-height: 0.94;
+    line-height: 1.02;
+    text-wrap: balance;
 }
 
 .bottom-bar {

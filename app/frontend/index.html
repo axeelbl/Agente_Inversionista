@@ -3,56 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI News Anchor | Informativo en directo</title>
+    <title>AI Inversionista | Analista IA de mercados</title>
     <link rel="icon" type="image/png" href="/static/pictures/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600;6..72,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/main.css">
 </head>
 <body>
     <div class="app-shell">
         <header class="app-header">
             <div class="brand">
-                <div class="brand-mark">AN</div>
+                <div class="brand-mark">AI</div>
                 <div class="brand-copy">
-                    <span class="brand-kicker">Informativo IA</span>
-                    <h1>AI News Anchor</h1>
-                    <p>Un chat normal con formato de televisi&oacute;n en directo.</p>
+                    <span class="brand-kicker">Analista IA de inversión</span>
+                    <h1>AI Inversionista</h1>
+                    <p>Chat, contexto de mercado y gráficas de activos en una sola interfaz limpia.</p>
                 </div>
             </div>
             <span class="live-pill">
                 <span class="live-dot" aria-hidden="true"></span>
-                En directo
+                Mercado activo
             </span>
         </header>
 
+        <nav class="workspace-tabs" aria-label="Navegación principal">
+            <button type="button" class="workspace-tab is-active" data-workspace-tab="chat">Chat</button>
+            <button type="button" class="workspace-tab" data-workspace-tab="charts">Gráficas</button>
+            <button type="button" class="workspace-tab" data-workspace-tab="planner">Planificador</button>
+        </nav>
+
         <main class="workspace">
-            <section class="broadcast-stack" aria-label="Cobertura principal">
-                <section class="stage-media" aria-label="Pantalla de noticias">
+            <section class="workspace-panel is-active" data-workspace-panel="chat">
+                <section class="broadcast-stack" aria-label="Panel principal de mercado">
+                <section class="stage-media" aria-label="Panel central de mercado">
                     <div class="stage-media-heading">
-                        <span class="section-kicker">Pantalla central</span>
-                        <h2>La noticia aparece en grande y en el centro</h2>
+                        <span class="section-kicker">Panel central</span>
+                        <h2>El activo, la gráfica y el contexto viven en la misma pantalla</h2>
                     </div>
 
                     <div class="stage-screen">
+                        <div id="featuredChart" class="featured-chart hidden" aria-hidden="true"></div>
+
                         <a id="featuredImageLink" class="featured-image-link hidden" href="#" target="_blank" rel="noreferrer">
                             <img
                                 id="featuredImage"
                                 class="featured-image hidden"
                                 src=""
-                                alt="Imagen destacada de la noticia"
+                                alt="Imagen destacada del contexto de mercado"
                                 referrerpolicy="no-referrer"
                             >
                         </a>
 
                         <div id="featuredPlaceholder" class="featured-placeholder" aria-hidden="true"></div>
 
-                        <button type="button" id="channelPrevBtn" class="channel-nav channel-nav-left" aria-label="Canal anterior">
+                        <button type="button" id="channelPrevBtn" class="channel-nav channel-nav-left" aria-label="Panel anterior">
                             &#10094;
                         </button>
 
-                        <button type="button" id="channelNextBtn" class="channel-nav channel-nav-right" aria-label="Canal siguiente">
+                        <button type="button" id="channelNextBtn" class="channel-nav channel-nav-right" aria-label="Panel siguiente">
                             &#10095;
                         </button>
 
@@ -62,48 +71,49 @@
                                     <div class="screen-copy-live">
                                         <span class="live-pill live-pill-screen">
                                             <span class="live-dot" aria-hidden="true"></span>
-                                            En directo
+                                            Mercado activo
                                         </span>
-                                        <div class="screen-live-label">Temas en directo</div>
+                                        <div class="screen-live-label">Radar de mercado</div>
                                     </div>
 
                                     <div class="screen-copy-meta">
-                                        <span id="featuredEyebrow" class="screen-eyebrow">Canal IA</span>
+                                        <span id="featuredEyebrow" class="screen-eyebrow">Panel IA</span>
                                         <strong id="channelCounter">1 / 1</strong>
                                     </div>
                                 </div>
 
-                                <strong id="featuredTitle" class="screen-copy-title">Escr&iacute;bele a la televisi&oacute;n y te respondo en directo</strong>
+                                <strong id="featuredTitle" class="screen-copy-title">Escríbeme un ticker, una duda o un plan de inversión</strong>
+                                <div id="featuredStats" class="featured-stats hidden" aria-live="polite"></div>
                                 <div id="screenLoadingRail" class="screen-loading-rail hidden" aria-hidden="true">
                                     <span></span>
                                     <span></span>
                                     <span></span>
                                 </div>
                                 <div id="featuredBody" class="screen-body">
-                                    <p>El chat y la imagen grande trabajan juntos para seguir la noticia.</p>
+                                    <p>Puedo ayudarte con acciones, ETFs, planes mensuales, diversificación y el impacto de noticias económicas recientes.</p>
                                 </div>
                                 <div class="screen-actions">
                                     <a id="featuredLink" class="screen-action-link hidden" href="#" target="_blank" rel="noreferrer">
-                                        Abrir noticia
+                                        Ver activo
                                     </a>
                                     <button type="button" id="featuredResetBtn" class="screen-reset-btn">
-                                        Noticias del d&iacute;a
+                                        Pulso del mercado
                                     </button>
                                 </div>
 
-                                <section id="avatarContainer" class="presenter-inset" aria-label="Presentador IA">
+                                <section id="avatarContainer" class="presenter-inset" aria-label="Analista IA">
                                     <div class="assistant-stage">
                                         <div class="assistant-stage-bg"></div>
                                         <div id="avatar">
                                             <div id="avatarHalo"></div>
-                                            <img id="baseFace" src="/static/pictures/eyes_open_mouth_closed.png" alt="Avatar del presentador IA">
+                                            <img id="baseFace" src="/static/pictures/eyes_open_mouth_closed.png" alt="Avatar del analista IA">
                                             <img id="mouthOpenImg" src="/static/pictures/eyes_open_mouth_open.png" alt="">
                                         </div>
                                     </div>
 
                                     <div class="assistant-details">
-                                        <div id="avatarName">Presentador IA</div>
-                                        <div id="avatarStatus">En directo</div>
+                                        <div id="avatarName">Analista IA</div>
+                                        <div id="avatarStatus">Mercado listo</div>
                                     </div>
                                 </section>
                             </div>
@@ -115,18 +125,18 @@
                     <div class="chat-panel-heading">
                         <div class="chat-panel-copy">
                             <span class="section-kicker">Chat</span>
-                            <h2>Habla con la emisi&oacute;n</h2>
-                            <p>El chat queda justo debajo de la pantalla, con el formato cl&aacute;sico de conversaci&oacute;n.</p>
+                            <h2>Habla con tu analista de inversión</h2>
+                            <p>Pregunta por activos, ETFs, sectores, planes orientativos o noticias que puedan afectar al mercado.</p>
                         </div>
 
-                        <span class="chat-surface-status">Se&ntilde;al estable</span>
+                        <span class="chat-surface-status">Datos listos</span>
                     </div>
 
                     <div class="chat-surface">
                         <div class="chat-empty" id="chatEmpty">
-                            <span class="chat-empty-kicker">Redacci&oacute;n activa</span>
-                            <h3>Pregunta por una noticia, un pa&iacute;s o un tema concreto.</h3>
-                            <p>Ejemplos: &ldquo;&Uacute;ltimas noticias sobre OpenAI&rdquo;, &ldquo;Qu&eacute; est&aacute; pasando en Espa&ntilde;a&rdquo; o &ldquo;Mu&eacute;strame im&aacute;genes de esta noticia&rdquo;.</p>
+                            <span class="chat-empty-kicker">Analisis activo</span>
+                            <h3>Empieza por una pregunta concreta o por tu objetivo de inversión.</h3>
+                            <p>Ejemplos: &ldquo;Quiero invertir 300 EUR al mes&rdquo;, &ldquo;Cómo ves Microsoft&rdquo; o &ldquo;Compárame VOO y QQQ&rdquo;.</p>
                         </div>
 
                         <div class="chat-container" id="chatContainer" aria-live="polite"></div>
@@ -135,30 +145,216 @@
                     <div class="composer-panel">
                         <div class="chat-activity" id="chatActivity">
                             <span class="activity-dot" aria-hidden="true"></span>
-                            <span id="chatActivityText">Pregunta por una noticia, un tema o un pa&iacute;s</span>
+                            <span id="chatActivityText">Pregunta por un activo, un ETF o un plan de inversión</span>
                         </div>
 
                         <div class="input-container">
-                            <input type="text" id="userInput" placeholder="Ejemplo: res&uacute;meme las noticias de tecnolog&iacute;a">
+                            <input type="text" id="userInput" placeholder="Ejemplo: muéstrame la gráfica de NVDA o hazme un plan moderado">
                             <button type="button" id="sendBtn">Enviar</button>
                             <button type="button" id="clearBtn">Borrar</button>
                         </div>
                     </div>
                 </section>
-                <section class="bottom-bar" aria-label="Informaci&oacute;n adicional">
+
+                <section class="bottom-bar" aria-label="Acciones rápidas">
                     <div class="bottom-bar-copy">
-                        <span class="section-kicker">Funciones</span>
-                        <h3>Accesos r&aacute;pidos para mover la emisi&oacute;n</h3>
-                        <p>Debajo del chat tienes las funciones principales para pedir titulares, contexto o im&aacute;genes.</p>
+                        <span class="section-kicker">Accesos directos</span>
+                        <h3>Ideas rápidas para mover el dashboard</h3>
+                        <p>Usa estos atajos para pedir gráficas, comparativas o un plan orientativo sin perder la fluidez del chat.</p>
                     </div>
 
                     <div class="quick-actions">
-                        <button type="button" class="quick-action" data-prompt="Dime las noticias m&aacute;s importantes del d&iacute;a">Titulares del d&iacute;a</button>
-                        <button type="button" class="quick-action" data-prompt="Qu&eacute; est&aacute; pasando hoy en Espa&ntilde;a">Espa&ntilde;a</button>
-                        <button type="button" class="quick-action" data-prompt="&Uacute;ltimas noticias de tecnolog&iacute;a">Tecnolog&iacute;a</button>
-                        <button type="button" class="quick-action" data-prompt="Resumen de econom&iacute;a">Econom&iacute;a</button>
-                        <button type="button" class="quick-action" data-prompt="Expl&iacute;camelo f&aacute;cil: lo m&aacute;s importante del d&iacute;a">Expl&iacute;camelo f&aacute;cil</button>
+                        <button type="button" class="quick-action" data-prompt="Quiero invertir 300 EUR al mes con perfil moderado">Plan mensual</button>
+                        <button type="button" class="quick-action" data-prompt="Qué ETF me conviene para largo plazo si soy principiante">ETF largo plazo</button>
+                        <button type="button" class="quick-action" data-prompt="Cómo ves Microsoft a 1Y">Microsoft</button>
+                        <button type="button" class="quick-action" data-prompt="Compárame VOO vs QQQ">VOO vs QQQ</button>
+                        <button type="button" class="quick-action" data-prompt="Muéstrame la gráfica de Nvidia en 6M">Gráfica Nvidia</button>
                     </div>
+                </section>
+                </section>
+            </section>
+
+            <section class="workspace-panel" data-workspace-panel="charts">
+                <section class="workspace-surface explorer-layout" aria-label="Explorador de gráficas">
+                    <aside class="workspace-sidebar">
+                        <div class="sidebar-card">
+                            <span class="section-kicker">Explorador</span>
+                            <h2>Busca, elige y cambia entre activos</h2>
+                            <p>Consulta una acción, ETF o índice, cambia de rango y usa acciones rápidas para comparar o llevarlo a tu plan.</p>
+
+                            <div class="asset-search-shell">
+                                <input type="text" id="chartSearchInput" class="workspace-search-input" placeholder="Ticker o nombre: NVDA, Microsoft, VOO">
+                                <div id="chartSearchResults" class="asset-search-results hidden"></div>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-card">
+                            <div class="sidebar-card-head">
+                                <div>
+                                    <span class="section-kicker">Watchlist</span>
+                                    <h3>Activos clicables</h3>
+                                </div>
+                            </div>
+                            <div id="watchlistContainer" class="watchlist-grid"></div>
+                        </div>
+
+                        <div class="sidebar-card">
+                            <span class="section-kicker">Comparativa</span>
+                            <h3>Selección rápida</h3>
+                            <div id="compareTray" class="compare-tray"></div>
+                            <button type="button" id="compareActionBtn" class="workspace-cta" disabled>Comparar en chat</button>
+                        </div>
+                    </aside>
+
+                    <div class="workspace-main-column">
+                        <section class="workspace-main-card">
+                            <div class="workspace-main-card-head">
+                                <div>
+                                    <span class="section-kicker">Activo</span>
+                                    <h2>Ficha y acciones visibles</h2>
+                                </div>
+                                <div id="chartExplorerStatus" class="explorer-status">Preparando explorador...</div>
+                            </div>
+
+                            <div id="explorerAssetSummary"></div>
+                        </section>
+
+                        <section class="workspace-main-card">
+                            <div class="workspace-main-card-head">
+                                <div>
+                                    <span class="section-kicker">Gráfica</span>
+                                    <h2>Lectura técnica visual</h2>
+                                </div>
+                            </div>
+
+                            <div id="chartExplorerPanel"></div>
+                        </section>
+                    </div>
+                </section>
+            </section>
+
+            <section class="workspace-panel" data-workspace-panel="planner">
+                <section class="workspace-surface planner-layout" aria-label="Planificador de inversión">
+                    <section class="workspace-main-card">
+                        <div class="workspace-main-card-head">
+                            <div>
+                                <span class="section-kicker">Planificador</span>
+                                <h2>Construye tu plan con dinero, pesos y escenarios</h2>
+                                <p>Esta vista es local y orientativa. Sirve para repartir presupuesto y explorar escenarios, no para ejecutar operaciones.</p>
+                            </div>
+                        </div>
+
+                        <div class="planner-controls-grid">
+                            <label class="planner-control">
+                                <span>Perfil</span>
+                                <select id="plannerRiskProfile">
+                                    <option value="conservador">Conservador</option>
+                                    <option value="moderado">Moderado</option>
+                                    <option value="agresivo">Agresivo</option>
+                                </select>
+                            </label>
+
+                            <label class="planner-control">
+                                <span>Aportación mensual</span>
+                                <input type="number" id="plannerMonthlyContribution" min="0" step="10" placeholder="300">
+                            </label>
+
+                            <label class="planner-control">
+                                <span>Capital inicial</span>
+                                <input type="number" id="plannerInitialCapital" min="0" step="50" placeholder="1000">
+                            </label>
+
+                            <label class="planner-control">
+                                <span>Horizonte (años)</span>
+                                <input type="number" id="plannerHorizonYears" min="0" step="1" placeholder="10">
+                            </label>
+                        </div>
+
+                        <div class="planner-helper-card">
+                            <span class="section-kicker">Lectura IA</span>
+                            <p id="plannerHelperCopy"></p>
+                        </div>
+
+                        <div class="planner-summary-grid" id="plannerSummaryCards"></div>
+
+                        <div class="planner-capture-card">
+                            <div class="planner-capture-copy">
+                                <span class="section-kicker">Seguimiento</span>
+                                <h3>Enviar este plan por correo</h3>
+                                <p>Si quiere compartir su plan, puede enviarlo aquí por correo. El envío incluye los datos del plan.</p>
+                            </div>
+
+                            <div class="planner-lead-grid">
+                                <label class="planner-control">
+                                    <span>Nombre</span>
+                                    <input type="text" id="plannerLeadName" placeholder="Nombre">
+                                </label>
+
+                                <label class="planner-control">
+                                    <span>Email</span>
+                                    <input type="email" id="plannerLeadEmail" placeholder="correo@ejemplo.com">
+                                </label>
+                            </div>
+
+                            <label class="planner-consent">
+                                <input type="checkbox" id="plannerLeadConsent">
+                                <span>Confirmo que quiero enviar este plan por correo.</span>
+                            </label>
+
+                            <div class="planner-capture-actions">
+                                <button type="button" id="plannerSubmitBtn" class="workspace-cta">Enviar plan por correo</button>
+                                <div id="plannerSubmitStatus" class="planner-submit-status"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="workspace-main-card">
+                        <div class="workspace-main-card-head">
+                            <div>
+                                <span class="section-kicker">Asignación</span>
+                                <h2>Acciones y ETFs del plan</h2>
+                            </div>
+                            <div class="asset-search-shell planner-search-shell">
+                                <input type="text" id="plannerSearchInput" class="workspace-search-input" placeholder="Añade AAPL, VOO, QQQ o busca por nombre">
+                                <div id="plannerSearchResults" class="asset-search-results hidden"></div>
+                            </div>
+                        </div>
+
+                        <div id="plannerWeightStatus" class="planner-weight-status"></div>
+
+                        <div id="plannerEmptyState" class="planner-empty-state">
+                            <h3>No has añadido activos todavía</h3>
+                            <p>Busca una acción o ETF, o usa el botón "Añadir al plan" desde la pestaña de gráficas.</p>
+                        </div>
+
+                        <div class="planner-table-wrap">
+                            <table class="planner-table">
+                                <thead>
+                                    <tr>
+                                        <th>Activo</th>
+                                        <th>Tipo</th>
+                                        <th>Peso %</th>
+                                        <th>Mensual</th>
+                                        <th>Inicial</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="plannerTableBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="workspace-main-card">
+                        <div class="workspace-main-card-head">
+                            <div>
+                                <span class="section-kicker">Escenarios</span>
+                                <h2>Simulador orientativo</h2>
+                                <p>Ajusta tres tasas anuales y observa cómo podría evolucionar el plan. No son promesas de rentabilidad.</p>
+                            </div>
+                        </div>
+
+                        <div id="plannerScenarioCards" class="scenario-grid"></div>
+                    </section>
                 </section>
             </section>
         </main>
@@ -169,7 +365,7 @@
             Cerrar
         </button>
         <button type="button" id="viewerLeft" class="nav left" aria-label="Imagen anterior">&#10094;</button>
-        <img id="viewerImg" alt="Vista ampliada de la noticia" referrerpolicy="no-referrer">
+        <img id="viewerImg" alt="Vista ampliada del contexto de mercado" referrerpolicy="no-referrer">
         <button type="button" id="viewerRight" class="nav right" aria-label="Imagen siguiente">&#10095;</button>
     </div>
 

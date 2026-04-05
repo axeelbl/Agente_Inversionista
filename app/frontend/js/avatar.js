@@ -35,7 +35,7 @@ export class AvatarController {
             this.mouthOpenImg.style.opacity = this.mouthOpen ? "1" : "0";
         }, 300);
 
-        this.avatarStatus.textContent = "Analizando…";
+        this.avatarStatus.textContent = "Analizando";
     }
 
     stopTalking() {
@@ -45,6 +45,6 @@ export class AvatarController {
         this.mouthOpenImg.style.opacity = "0";
         this.avatarHalo.style.opacity = "0";
         this.avatar.style.transform = "scale(1)";
-        this.avatarStatus.textContent = "En directo";
+        this.avatarStatus.textContent = "Mercado listo";
     }
 }

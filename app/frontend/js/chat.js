@@ -1,9 +1,22 @@
+import {
+    buildChartSvg,
+    buildMomentumBarsSvg,
+    buildRangeMeterSvg,
+    buildRsiGaugeSvg,
+    buildSignalGaugeSvg,
+    formatCompactNumber,
+    formatCurrency,
+    formatPercent,
+    getTechnicalSnapshot,
+} from "./chart-utils.js";
+
 export class ChatController {
     constructor(ui, avatar, apiUrl) {
         this.ui = ui;
         this.avatar = avatar;
         this.apiUrl = apiUrl;
         this.liveFeedUrl = "/live-feed";
+        this.assetChartUrl = "/asset-chart";
 
         this.queue = [];
         this.processing = false;
@@ -17,6 +30,7 @@ export class ChatController {
         this.isShowingDefaultFeed = true;
         this.screenRotationTimer = null;
         this.liveFeedRefreshTimer = null;
+        this.marketContextListener = null;
 
         this.ui.sendBtn.addEventListener("click", () => this.submitCurrentInput());
         this.ui.userInput.addEventListener("keydown", (event) => {
@@ -34,11 +48,15 @@ export class ChatController {
 
     async showWelcomeMessage() {
         const welcomeMessage =
-            "Buenas, soy tu presentador IA.\n\n" +
-            "Puedo darte titulares del d\u00eda, resumir noticias por tema, explicar la actualidad de forma sencilla y mostrar im\u00e1genes relacionadas cuando existan.";
+            "Soy tu analista IA de inversión.\n\n" +
+            "Puedo explicarte acciones, ETFs, índices y sectores, proponerte planes orientativos según tu perfil y mostrar gráficas cuando consultes un activo.";
 
         await this.ui.addBotMessageTyping(welcomeMessage);
         this.pushHistory("assistant", welcomeMessage);
+    }
+
+    setMarketContextListener(listener) {
+        this.marketContextListener = typeof listener === "function" ? listener : null;
     }
 
     resetConversation() {
@@ -144,21 +162,18 @@ export class ChatController {
     async refreshLiveFeed({ forceDisplay = false } = {}) {
         try {
             const response = await fetch(this.liveFeedUrl);
-
             if (!response.ok) {
                 throw new Error(`Live feed failed with status ${response.status}`);
             }
 
             const data = await response.json();
-            const channels = this.shuffleItems(
-                this.buildChannelItemsFromArticles(data.articles, data.topic || "actualidad general"),
-            );
+            const channels = this.normalizeChannels(data.channels);
 
             if (!channels.length) {
                 throw new Error("Live feed returned no channels");
             }
 
-            this.defaultScreenChannels = channels;
+            this.defaultScreenChannels = this.shuffleItems(channels);
 
             if (forceDisplay || this.isShowingDefaultFeed || !this.activeScreenChannels.length) {
                 this.setActiveScreenChannels(this.defaultScreenChannels, { isDefault: true });
@@ -169,9 +184,9 @@ export class ChatController {
             }
 
             this.ui.showFeaturedState({
-                eyebrow: "Se\u00f1al",
-                title: "No he podido cargar los temas en directo",
-                body: "Prueba de nuevo en unos segundos o usa el chat para buscar una noticia concreta.",
+                eyebrow: "Conexión",
+                title: "No he podido cargar el pulso del mercado",
+                body: "Prueba de nuevo en unos segundos o usa el chat para pedir un activo concreto.",
             });
             this.ui.setChannelCounter(1, 1);
             this.ui.setChannelNavigationEnabled(false);
@@ -196,41 +211,41 @@ export class ChatController {
         return result;
     }
 
-    buildChannelItemsFromArticles(articles, topic) {
-        const safeArticles = Array.isArray(articles) ? articles : [];
-        const fallbackImageUrl =
-            safeArticles
-                .map((article) => this.getCleanImageUrl(article.image_url))
-                .find(Boolean) || "";
-
-        return safeArticles
-            .map((article) => ({
-                eyebrow: article.source || topic || "Actualidad general",
-                title: article.title || topic || "Actualidad general",
-                body: [
-                    article.description || "Cambia de canal para seguir otra noticia de la emisi\u00f3n en directo.",
-                    article.source ? `**Fuente:** ${article.source}` : "",
-                    article.published_at ? `**Actualizado:** ${this.formatPublishedAt(article.published_at)}` : "",
-                ]
-                    .filter(Boolean)
-                    .join("\n\n"),
-                imageUrl: this.getCleanImageUrl(article.image_url) || fallbackImageUrl,
-                linkUrl: article.url || "",
-                linkLabel: "Abrir noticia",
+    normalizeChannels(channels) {
+        return (Array.isArray(channels) ? channels : [])
+            .map((channel) => ({
+                eyebrow: channel.eyebrow || "Mercado",
+                title: channel.title || "Panel de mercado",
+                body: channel.body || "Sin contenido disponible.",
+                imageUrl: this.getCleanImageUrl(channel.imageUrl),
+                linkUrl: channel.linkUrl || "",
+                linkLabel: channel.linkLabel || "Ver activo",
+                asset: channel.asset || null,
+                chart: channel.chart || null,
             }))
-            .filter((item) => item.title);
+            .filter((channel) => channel.title);
     }
 
-    buildChannelItemsFromPhotos(photos, topic) {
-        return this.sanitizeImageUrls(photos).map((imageUrl, index) => ({
-            eyebrow: topic || "Galer\u00eda visual",
-            title: topic ? `Im\u00e1genes de ${topic}` : `Imagen en directo ${index + 1}`,
-            body: "Cambia de canal para ver otra imagen relacionada con la cobertura.",
-            imageUrl,
-        }));
+    showLoadingState(query) {
+        const searchLabel = this.truncateText(query);
+
+        this.ui.showFeaturedState({
+            eyebrow: "Analizando",
+            title: `Preparando lectura de mercado sobre ${searchLabel}`,
+            body:
+                "**Estoy reuniendo el contexto**\n\n" +
+                "- cotización y señal reciente\n" +
+                "- noticias y catalizadores\n" +
+                "- una respuesta prudente y útil",
+            asset: null,
+            chart: null,
+            isLoading: true,
+        });
+        this.ui.setChannelCounter(1, 1);
+        this.ui.setChannelNavigationEnabled(false);
     }
 
-    truncateText(value, maxLength = 68) {
+    truncateText(value, maxLength = 72) {
         const normalized = (value || "").trim().replace(/\s+/g, " ");
 
         if (normalized.length <= maxLength) {
@@ -238,82 +253,6 @@ export class ChatController {
         }
 
         return `${normalized.slice(0, maxLength - 1).trimEnd()}...`;
-    }
-
-    parseScreenNarrative(text, fallbackTitle) {
-        const normalized = (text || "").replace(/\r\n/g, "\n").trim();
-
-        if (!normalized) {
-            return {
-                title: fallbackTitle,
-                body: "Estoy siguiendo esta cobertura en directo.",
-            };
-        }
-
-        const blocks = normalized
-            .split(/\n{2,}/)
-            .map((block) => block.trim())
-            .filter(Boolean);
-
-        let title = fallbackTitle;
-        let bodyBlocks = [...blocks];
-
-        if (bodyBlocks.length) {
-            const rawFirstBlock = bodyBlocks[0];
-            const firstBlock = rawFirstBlock.replace(/^\*\*([^*]+)\*\*$/, "$1").trim();
-            const looksLikeTitle =
-                rawFirstBlock.split("\n").length === 1 &&
-                firstBlock.length <= 96 &&
-                !/^[*-]\s/.test(firstBlock) &&
-                !/^\d+\.\s/.test(firstBlock);
-
-            if (looksLikeTitle) {
-                title = firstBlock;
-                bodyBlocks = bodyBlocks.slice(1);
-            }
-        }
-
-        return {
-            title,
-            body: bodyBlocks.join("\n\n") || normalized,
-        };
-    }
-
-    buildChatScreenChannel(data) {
-        const safeArticles = Array.isArray(data.articles) ? data.articles : [];
-        const safePhotos = this.sanitizeImageUrls(data.photos);
-        const featuredArticle =
-            safeArticles.find((article) => this.getCleanImageUrl(article.image_url)) || safeArticles[0] || null;
-        const fallbackTitle = featuredArticle?.title || data.topic || "Cobertura";
-        const parsedNarrative = this.parseScreenNarrative(data.bot_message, fallbackTitle);
-
-        return {
-            eyebrow: featuredArticle?.source || data.topic || "Cobertura",
-            title: parsedNarrative.title,
-            body: parsedNarrative.body,
-            imageUrl: this.getCleanImageUrl(featuredArticle?.image_url) || safePhotos[0] || "",
-            linkUrl: featuredArticle?.url || "",
-            linkLabel: "Abrir noticia",
-        };
-    }
-
-    showLoadingState(query) {
-        const currentChannel = this.activeScreenChannels[this.activeScreenChannelIndex] || this.defaultScreenChannels[0];
-        const searchLabel = this.truncateText(query);
-
-        this.ui.showFeaturedState({
-            eyebrow: "Preparando bolet\u00edn",
-            title: `Cargando noticias sobre ${searchLabel}`,
-            body:
-                "**Buscando fuentes fiables**\n\n" +
-                "- reuniendo titulares y contexto\n" +
-                "- ordenando la cobertura para pantalla\n" +
-                "- preparando el resumen del chat",
-            imageUrl: currentChannel?.imageUrl || "",
-            isLoading: true,
-        });
-        this.ui.setChannelCounter(1, 1);
-        this.ui.setChannelNavigationEnabled(false);
     }
 
     setActiveScreenChannels(items, { isDefault = false } = {}) {
@@ -347,6 +286,8 @@ export class ChatController {
             imageUrl: channel.imageUrl,
             linkUrl: channel.linkUrl,
             linkLabel: channel.linkLabel,
+            chart: channel.chart,
+            asset: channel.asset,
         });
         this.ui.setChannelCounter(safeIndex + 1, total);
         this.ui.setChannelNavigationEnabled(total > 1);
@@ -506,88 +447,495 @@ export class ChatController {
         return true;
     }
 
-    buildImageGallery(photos) {
-        const safePhotos = this.sanitizeImageUrls(photos);
-
-        if (!safePhotos.length) {
-            return null;
+    publishMarketContext(payload) {
+        if (typeof this.marketContextListener === "function") {
+            this.marketContextListener(payload || {});
         }
-
-        const galleryBlock = document.createElement("section");
-        galleryBlock.className = "chat-gallery";
-
-        const galleryTop = document.createElement("div");
-        galleryTop.className = "gallery-top";
-
-        const galleryHeading = document.createElement("div");
-        galleryHeading.className = "gallery-heading";
-        galleryHeading.textContent = "Im\u00e1genes relacionadas";
-
-        const gallerySubtitle = document.createElement("div");
-        gallerySubtitle.className = "gallery-subtitle";
-        gallerySubtitle.textContent =
-            safePhotos.length === 1
-                ? "1 imagen disponible"
-                : `${safePhotos.length} im\u00e1genes disponibles`;
-
-        galleryTop.append(galleryHeading, gallerySubtitle);
-
-        const gallery = document.createElement("div");
-        gallery.className = "photo-gallery";
-
-        safePhotos.forEach((src, index) => {
-            const photoButton = document.createElement("button");
-            photoButton.type = "button";
-            photoButton.className = "photo-card";
-            photoButton.setAttribute("aria-label", `Abrir imagen ${index + 1}`);
-
-            const img = document.createElement("img");
-            img.src = src;
-            img.alt = `Imagen relacionada ${index + 1}`;
-            img.className = "chat-photo";
-            this.decorateRemoteImage(img, () => {
-                photoButton.remove();
-            });
-
-            const copy = document.createElement("div");
-            copy.className = "photo-card-copy";
-
-            const title = document.createElement("span");
-            title.textContent = `Imagen ${index + 1}`;
-
-            const action = document.createElement("span");
-            action.textContent = "Ampliar";
-
-            copy.append(title, action);
-            photoButton.append(img, copy);
-
-            photoButton.addEventListener("click", () => {
-                this.openViewer(index);
-            });
-
-            gallery.appendChild(photoButton);
-        });
-
-        galleryBlock.append(galleryTop, gallery);
-        return galleryBlock;
     }
 
-    buildNewsDeck(articles, topic) {
+    buildAssetPanel(asset, outlook) {
+        const panel = document.createElement("section");
+        panel.className = "insight-panel asset-panel";
+
+        const header = document.createElement("div");
+        header.className = "panel-header";
+
+        const titleGroup = document.createElement("div");
+        titleGroup.className = "panel-title-group";
+
+        const eyebrow = document.createElement("span");
+        eyebrow.className = "panel-kicker";
+        eyebrow.textContent = `${asset.quote_type_label || "Activo"} | ${asset.exchange || "Mercado"}`;
+
+        const title = document.createElement("h3");
+        title.textContent = `${asset.symbol} | ${asset.name || asset.symbol}`;
+
+        titleGroup.append(eyebrow, title);
+
+        const trend = document.createElement("div");
+        trend.className = `trend-pill ${(asset.change_percent || 0) >= 0 ? "is-positive" : "is-negative"}`;
+        trend.textContent = formatPercent(asset.change_percent);
+
+        header.append(titleGroup, trend);
+
+        const metrics = document.createElement("div");
+        metrics.className = "metric-grid";
+
+        [
+            ["Precio", formatCurrency(asset.price, asset.currency)],
+            ["Cambio diario", formatPercent(asset.change_percent)],
+            ["52 semanas", `${formatCurrency(asset.fifty_two_week_low, asset.currency)} - ${formatCurrency(asset.fifty_two_week_high, asset.currency)}`],
+            ["Volumen", formatCompactNumber(asset.volume)],
+            ["Capitalización", formatCompactNumber(asset.market_cap)],
+        ].forEach(([label, value]) => {
+            metrics.appendChild(this.createMetricCard(label, value));
+        });
+
+        panel.append(header, metrics);
+
+        if (outlook?.label || (outlook?.reasons || []).length) {
+            const outlookBlock = document.createElement("div");
+            outlookBlock.className = "panel-copy";
+
+            const outlookTitle = document.createElement("h4");
+            outlookTitle.textContent = "Escenario probable";
+
+            const outlookText = document.createElement("p");
+            outlookText.textContent = `${outlook.label || "Lectura mixta"}. ${outlook.disclaimer || ""}`.trim();
+
+            outlookBlock.append(outlookTitle, outlookText);
+
+            if ((outlook.reasons || []).length) {
+                const list = document.createElement("ul");
+                (outlook.reasons || []).forEach((reason) => {
+                    const item = document.createElement("li");
+                    item.textContent = reason;
+                    list.appendChild(item);
+                });
+                outlookBlock.appendChild(list);
+            }
+
+            panel.appendChild(outlookBlock);
+        }
+
+        return panel;
+    }
+
+    createMetricCard(label, value) {
+        const card = document.createElement("div");
+        card.className = "metric-card";
+
+        const title = document.createElement("span");
+        title.className = "metric-card-label";
+        title.textContent = label;
+
+        const amount = document.createElement("strong");
+        amount.className = "metric-card-value";
+        amount.textContent = value;
+
+        card.append(title, amount);
+        return card;
+    }
+
+    buildChartPanel(chart, asset) {
+        const panel = document.createElement("section");
+        panel.className = "insight-panel chart-panel";
+        panel.dataset.ticker = asset?.symbol || chart.symbol || "";
+
+        const header = document.createElement("div");
+        header.className = "panel-header panel-header-chart";
+
+        const titleGroup = document.createElement("div");
+        titleGroup.className = "panel-title-group";
+
+        const eyebrow = document.createElement("span");
+        eyebrow.className = "panel-kicker";
+        eyebrow.textContent = "Gráfica";
+
+        const title = document.createElement("h3");
+        title.textContent = `${chart.symbol} | ${asset?.name || chart.name || chart.symbol}`;
+
+        titleGroup.append(eyebrow, title);
+
+        const rangeSelector = document.createElement("div");
+        rangeSelector.className = "range-selector";
+
+        (chart.available_ranges || []).forEach((rangeKey) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "range-chip";
+            button.textContent = rangeKey;
+            button.dataset.range = rangeKey;
+            if (rangeKey === chart.range) {
+                button.classList.add("is-active");
+            }
+            button.addEventListener("click", () => {
+                void this.loadChartRange(panel, chart.symbol, rangeKey);
+            });
+            rangeSelector.appendChild(button);
+        });
+
+        header.append(titleGroup, rangeSelector);
+
+        const chartCanvas = document.createElement("div");
+        chartCanvas.className = "chart-canvas";
+
+        const summary = document.createElement("div");
+        summary.className = "chart-summary";
+
+        const technicalBoard = document.createElement("div");
+        technicalBoard.className = "technical-grid";
+
+        panel.append(header, chartCanvas, summary, technicalBoard);
+        this.renderChartPanel(panel, chart, asset);
+        return panel;
+    }
+
+    renderChartPanel(panel, chart, asset) {
+        const chartCanvas = panel.querySelector(".chart-canvas");
+        const summary = panel.querySelector(".chart-summary");
+        const technicalBoard = panel.querySelector(".technical-grid");
+        if (!chartCanvas || !summary || !technicalBoard) return;
+
+        chartCanvas.innerHTML = buildChartSvg(chart);
+        summary.innerHTML = "";
+        technicalBoard.innerHTML = "";
+
+        const technical = getTechnicalSnapshot(chart);
+
+        [
+            ["Rango", chart.range],
+            ["Cambio", formatPercent(chart.summary?.change_percent)],
+            ["Maximo", formatCurrency(chart.summary?.high, chart.currency || asset?.currency)],
+            ["Minimo", formatCurrency(chart.summary?.low, chart.currency || asset?.currency)],
+        ].forEach(([label, value]) => {
+            const item = document.createElement("div");
+            item.className = "chart-summary-item";
+
+            const itemLabel = document.createElement("span");
+            itemLabel.textContent = label;
+
+            const itemValue = document.createElement("strong");
+            itemValue.textContent = value;
+
+            item.append(itemLabel, itemValue);
+            summary.appendChild(item);
+        });
+
+        if (technical) {
+            const rsiValue = Number.isFinite(technical.rsi) ? technical.rsi.toFixed(1) : "n/d";
+            technicalBoard.append(
+                this.createTechnicalCard({
+                    title: "Score de señal",
+                    subtitle: technical.trendLabel,
+                    value: `${technical.trendScore.toFixed(0)}`,
+                    visual: buildSignalGaugeSvg(technical.trendScore),
+                    copy: technical.structureLabel,
+                }),
+                this.createTechnicalCard({
+                    title: "RSI 14",
+                    subtitle: this.getRsiLabel(technical.rsi),
+                    value: rsiValue,
+                    visual: buildRsiGaugeSvg(technical.rsi),
+                    copy: this.getRsiCopy(technical.rsi),
+                }),
+                this.createTechnicalCard({
+                    title: "Momentum",
+                    subtitle: this.getMomentumLabel(technical.momentumBars),
+                    value: formatPercent(technical.momentumBars[technical.momentumBars.length - 1] || 0),
+                    visual: buildMomentumBarsSvg(technical.momentumBars),
+                    copy: `SMA20: ${formatCurrency(technical.smaFast, chart.currency || asset?.currency)} | SMA50: ${formatCurrency(technical.smaSlow, chart.currency || asset?.currency)}`,
+                }),
+                this.createTechnicalCard({
+                    title: "Niveles",
+                    subtitle: "Soporte y resistencia",
+                    value: `${technical.pricePositionPercent.toFixed(0)}%`,
+                    visual: buildRangeMeterSvg(technical),
+                    copy: `Soporte a ${formatCurrency(technical.support, chart.currency || asset?.currency)} y resistencia a ${formatCurrency(technical.resistance, chart.currency || asset?.currency)}.`,
+                    copySecondary: `Distancia al soporte: ${formatPercent(technical.supportDistance)} | a resistencia: ${formatPercent(technical.resistanceDistance)}`,
+                }),
+            );
+        }
+    }
+
+    createTechnicalCard({ title, subtitle, value, visual, copy, copySecondary = "" }) {
+        const card = document.createElement("article");
+        card.className = "technical-card";
+
+        const top = document.createElement("div");
+        top.className = "technical-card-top";
+
+        const titleWrap = document.createElement("div");
+        titleWrap.className = "technical-card-title-wrap";
+
+        const heading = document.createElement("h4");
+        heading.className = "technical-card-title";
+        heading.textContent = title;
+
+        const headingSub = document.createElement("span");
+        headingSub.className = "technical-card-subtitle";
+        headingSub.textContent = subtitle;
+
+        titleWrap.append(heading, headingSub);
+
+        const strong = document.createElement("strong");
+        strong.className = "technical-card-value";
+        strong.textContent = value;
+
+        top.append(titleWrap, strong);
+
+        const visualWrap = document.createElement("div");
+        visualWrap.className = "technical-visual";
+        visualWrap.innerHTML = visual;
+
+        const text = document.createElement("p");
+        text.className = "technical-card-copy";
+        text.textContent = copy;
+
+        card.append(top, visualWrap, text);
+
+        if (copySecondary) {
+            const secondary = document.createElement("p");
+            secondary.className = "technical-card-copy technical-card-copy-secondary";
+            secondary.textContent = copySecondary;
+            card.appendChild(secondary);
+        }
+
+        return card;
+    }
+
+    getRsiLabel(rsi) {
+        if (!Number.isFinite(rsi)) return "Dato insuficiente";
+        if (rsi >= 70) return "Sobrecompra";
+        if (rsi <= 30) return "Sobreventa";
+        if (rsi >= 55) return "Impulso sano";
+        if (rsi <= 45) return "Impulso flojo";
+        return "Zona neutral";
+    }
+
+    getRsiCopy(rsi) {
+        if (!Number.isFinite(rsi)) return "No hay suficientes puntos para una lectura RSI fiable en este rango.";
+        if (rsi >= 70) return "El activo llega exigido técnicamente; puede seguir subiendo, pero el riesgo de enfriamiento aumenta.";
+        if (rsi <= 30) return "La lectura sugiere presión reciente fuerte; puede aparecer rebote, pero no hay garantía de giro.";
+        if (rsi >= 55) return "Hay impulso comprador, aunque conviene vigilar si el precio pierde su media rápida.";
+        if (rsi <= 45) return "La demanda es más frágil y el contexto técnico pide confirmación adicional.";
+        return "No hay una lectura extrema; el mercado esta en una zona intermedia.";
+    }
+
+    getMomentumLabel(momentumBars) {
+        const recentAverage =
+            (momentumBars || []).reduce((sum, value) => sum + value, 0) /
+            Math.max((momentumBars || []).length, 1);
+
+        if (recentAverage > 0.35) return "Aceleración positiva";
+        if (recentAverage < -0.35) return "Aceleración negativa";
+        return "Flujo mixto";
+    }
+
+    async loadChartRange(panel, ticker, rangeKey) {
+        const buttons = panel.querySelectorAll(".range-chip");
+        buttons.forEach((button) => {
+            button.disabled = true;
+            button.classList.toggle("is-active", button.dataset.range === rangeKey);
+        });
+        panel.classList.add("is-loading");
+
+        try {
+            const response = await fetch(
+                `${this.assetChartUrl}?ticker=${encodeURIComponent(ticker)}&range=${encodeURIComponent(rangeKey)}`,
+            );
+
+            if (!response.ok) {
+                throw new Error(`Chart request failed with status ${response.status}`);
+            }
+
+            const chart = await response.json();
+            this.renderChartPanel(panel, chart, { symbol: ticker, name: ticker, currency: chart.currency });
+            this.syncChartToScreen(ticker, chart);
+            this.publishMarketContext({
+                asset: { symbol: ticker, name: ticker, currency: chart.currency },
+                chart,
+            });
+        } catch (error) {
+            const chartCanvas = panel.querySelector(".chart-canvas");
+            if (chartCanvas) {
+                chartCanvas.innerHTML = "<div class=\"chart-error\">No he podido cargar ese rango ahora mismo.</div>";
+            }
+        } finally {
+            panel.classList.remove("is-loading");
+            buttons.forEach((button) => {
+                button.disabled = false;
+            });
+        }
+    }
+
+    syncChartToScreen(ticker, chart) {
+        this.activeScreenChannels = this.activeScreenChannels.map((channel) => {
+            if (channel.asset?.symbol === ticker || channel.chart?.symbol === ticker) {
+                return { ...channel, chart };
+            }
+            return channel;
+        });
+
+        if (this.activeScreenChannels[this.activeScreenChannelIndex]?.asset?.symbol === ticker) {
+            this.showScreenChannel(this.activeScreenChannelIndex);
+        }
+    }
+
+    buildComparisonPanel(comparison) {
+        const items = comparison.items || [];
+        const panel = document.createElement("section");
+        panel.className = "insight-panel comparison-panel";
+
+        const header = document.createElement("div");
+        header.className = "panel-header";
+
+        const titleGroup = document.createElement("div");
+        titleGroup.className = "panel-title-group";
+
+        const eyebrow = document.createElement("span");
+        eyebrow.className = "panel-kicker";
+            eyebrow.textContent = "Comparación";
+
+        const title = document.createElement("h3");
+        title.textContent = "Comparativa de activos";
+
+        titleGroup.append(eyebrow, title);
+        header.appendChild(titleGroup);
+
+        const grid = document.createElement("div");
+        grid.className = "comparison-grid";
+
+        items.forEach((item) => {
+            const card = document.createElement("article");
+            card.className = "comparison-card";
+
+            const cardTitle = document.createElement("h4");
+            cardTitle.textContent = `${item.symbol} | ${item.name || item.symbol}`;
+
+            const meta = document.createElement("p");
+            meta.textContent = `${item.quote_type_label || "Activo"} | ${item.exchange || "Mercado"}`;
+
+            const list = document.createElement("ul");
+            [
+                `Precio: ${formatCurrency(item.price, item.currency)}`,
+                `Cambio diario: ${formatPercent(item.change_percent)}`,
+                `Rango 52 semanas: ${formatCurrency(item.fifty_two_week_low, item.currency)} - ${formatCurrency(item.fifty_two_week_high, item.currency)}`,
+            ].forEach((line) => {
+                const li = document.createElement("li");
+                li.textContent = line;
+                list.appendChild(li);
+            });
+
+            card.append(cardTitle, meta, list);
+            grid.appendChild(card);
+        });
+
+        panel.append(header, grid);
+        return panel;
+    }
+
+    buildInvestmentPlanPanel(plan) {
+        const panel = document.createElement("section");
+        panel.className = "insight-panel plan-panel";
+
+        const header = document.createElement("div");
+        header.className = "panel-header";
+
+        const titleGroup = document.createElement("div");
+        titleGroup.className = "panel-title-group";
+
+        const eyebrow = document.createElement("span");
+        eyebrow.className = "panel-kicker";
+        eyebrow.textContent = `Plan ${plan.risk_profile}`;
+
+        const title = document.createElement("h3");
+        title.textContent = "Plan orientativo";
+
+        titleGroup.append(eyebrow, title);
+        header.appendChild(titleGroup);
+
+        const overview = document.createElement("div");
+        overview.className = "plan-overview";
+
+        [
+            ["Horizonte", plan.horizon],
+            ["Aporte mensual", plan.monthly_amount ? `${plan.monthly_amount} EUR` : "Por porcentajes"],
+            ["Enfoque", plan.focus],
+        ].forEach(([label, value]) => {
+            overview.appendChild(this.createMetricCard(label, value));
+        });
+
+        const allocations = document.createElement("div");
+        allocations.className = "allocation-list";
+
+        (plan.allocation || []).forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "allocation-row";
+
+            const top = document.createElement("div");
+            top.className = "allocation-top";
+
+            const label = document.createElement("strong");
+            label.textContent = `${item.label}`;
+
+            const value = document.createElement("span");
+            value.textContent = `${item.percentage}%${item.monthly_amount ? ` | ${item.monthly_amount.toFixed(2)} EUR` : ""}`;
+
+            top.append(label, value);
+
+            const bar = document.createElement("div");
+            bar.className = "allocation-bar";
+
+            const fill = document.createElement("span");
+            fill.style.width = `${item.percentage}%`;
+            bar.appendChild(fill);
+
+            const detail = document.createElement("p");
+            detail.textContent = item.rationale;
+
+            row.append(top, bar, detail);
+            allocations.appendChild(row);
+        });
+
+        const footer = document.createElement("div");
+        footer.className = "panel-copy";
+
+        const footerTitle = document.createElement("h4");
+        footerTitle.textContent = "Riesgos";
+
+        const disclaimer = document.createElement("p");
+        disclaimer.textContent = plan.disclaimer;
+
+        footer.append(footerTitle, disclaimer);
+
+        panel.append(header, overview, allocations, footer);
+        return panel;
+    }
+
+    buildMarketNewsDeck(articles, topic) {
         const newsDeck = document.createElement("section");
-        newsDeck.className = "news-deck";
+        newsDeck.className = "insight-panel market-news-deck";
 
         const deckTop = document.createElement("div");
-        deckTop.className = "gallery-top";
+        deckTop.className = "panel-header";
 
-        const deckHeading = document.createElement("div");
-        deckHeading.className = "gallery-heading";
-        deckHeading.textContent = "Cobertura";
+        const titleGroup = document.createElement("div");
+        titleGroup.className = "panel-title-group";
 
-        const deckSubtitle = document.createElement("div");
-        deckSubtitle.className = "gallery-subtitle";
-        deckSubtitle.textContent = topic || "Actualidad general";
+        const eyebrow = document.createElement("span");
+        eyebrow.className = "panel-kicker";
+        eyebrow.textContent = "Contexto";
 
-        deckTop.append(deckHeading, deckSubtitle);
+        const title = document.createElement("h3");
+        title.textContent = "Noticias que mueven el mercado";
+
+        const subtitle = document.createElement("p");
+        subtitle.className = "panel-subtitle";
+        subtitle.textContent = topic || "mercado global";
+
+        titleGroup.append(eyebrow, title, subtitle);
+        deckTop.appendChild(titleGroup);
 
         const grid = document.createElement("div");
         grid.className = "news-grid";
@@ -599,7 +947,6 @@ export class ChatController {
             card.className = "news-card";
 
             const articleImageUrl = this.getCleanImageUrl(article.image_url);
-
             if (articleImageUrl) {
                 const viewerIndex = photoUrls.push(articleImageUrl) - 1;
                 const mediaButton = document.createElement("button");
@@ -610,7 +957,7 @@ export class ChatController {
 
                 const image = document.createElement("img");
                 image.src = articleImageUrl;
-                image.alt = article.title || "Imagen de la noticia";
+                image.alt = article.title || "Imagen relacionada";
                 this.decorateRemoteImage(image, () => {
                     mediaButton.remove();
                 });
@@ -626,8 +973,8 @@ export class ChatController {
             meta.className = "news-card-meta";
             meta.textContent = `${article.source || "Fuente"} | ${this.formatPublishedAt(article.published_at)}`;
 
-            const title = document.createElement("h3");
-            title.textContent = article.title;
+            const cardTitle = document.createElement("h3");
+            cardTitle.textContent = article.title;
 
             const description = document.createElement("p");
             description.textContent = article.description || "Sin extracto disponible.";
@@ -642,50 +989,19 @@ export class ChatController {
             link.textContent = "Abrir fuente";
 
             footer.appendChild(link);
-            body.append(meta, title, description, footer);
+            body.append(meta, cardTitle, description, footer);
             card.appendChild(body);
             grid.appendChild(card);
         });
 
-        const deckActions = document.createElement("div");
-        deckActions.className = "deck-actions";
-
-        [
-            {
-                label: "Resumen en 3 puntos",
-                prompt: `Res\u00famelo en 3 puntos sobre ${topic || "estas noticias"}`,
-            },
-            {
-                label: "Expl\u00edcamelo f\u00e1cil",
-                prompt: `Expl\u00edcamelo f\u00e1cil sobre ${topic || "estas noticias"}`,
-            },
-        ].forEach(({ label, prompt }) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "quick-action";
-            button.textContent = label;
-            button.addEventListener("click", () => this.queueMessage(prompt));
-            deckActions.appendChild(button);
-        });
-
-        newsDeck.append(deckTop, grid, deckActions);
+        newsDeck.append(deckTop, grid);
         return { block: newsDeck, photoUrls: this.sanitizeImageUrls(photoUrls) };
-    }
-
-    showCoverageOnScreen(data) {
-        const screenChannel = this.buildChatScreenChannel(data);
-        this.setActiveScreenChannels([screenChannel], { isDefault: false });
-    }
-
-    showConversationalState() {
-        this.resumeDefaultLiveFeed();
     }
 
     formatPublishedAt(value) {
         if (!value) return "Fecha no disponible";
 
         const parsedDate = new Date(value);
-
         if (Number.isNaN(parsedDate.getTime())) {
             return value;
         }
@@ -727,46 +1043,28 @@ export class ChatController {
             }
 
             const data = await res.json();
+            const channels = this.normalizeChannels(data.channels);
 
-            if ((data.articles && data.articles.length) || (data.photos && data.photos.length) || data.topic) {
-                this.showCoverageOnScreen(data);
+            if (channels.length) {
+                this.setActiveScreenChannels(channels, { isDefault: false });
             } else {
-                this.showConversationalState();
+                this.resumeDefaultLiveFeed();
             }
+
+            this.publishMarketContext(data);
 
             await this.ui.addBotMessageTyping(data.bot_message);
 
             this.pushHistory("user", text);
             this.pushHistory("assistant", data.bot_message);
 
-            if (data.articles && data.articles.length) {
-                const deck = this.buildNewsDeck(data.articles, data.topic);
-                this.currentPhotos = deck.photoUrls;
-                this.brokenPhotoUrls.clear();
-                this.ui.appendBlock(deck.block);
-            } else if (data.photos && data.photos.length) {
-                const safePhotos = this.sanitizeImageUrls(data.photos);
-                this.currentPhotos = safePhotos;
-                this.brokenPhotoUrls.clear();
-
-                const gallery = this.buildImageGallery(safePhotos);
-                if (gallery) {
-                    this.ui.appendBlock(gallery);
-                }
-            } else {
-                this.currentPhotos = [];
-                this.brokenPhotoUrls.clear();
-            }
+            this.appendResponseBlocks(data);
         } catch (error) {
-            const fallbackMessage = "No he podido conectar con el servicio de noticias ahora mismo.";
+            const fallbackMessage = "No he podido conectar con el servicio de mercado ahora mismo.";
             this.ui.showFeaturedState({
-                eyebrow: "Se\u00f1al",
-                title: "Conexi\u00f3n no disponible",
-                body: "No he podido preparar esta cobertura ahora mismo. Pulsa en `Noticias del d\u00eda` para volver al directo general.",
-                imageUrl:
-                    this.activeScreenChannels[this.activeScreenChannelIndex]?.imageUrl ||
-                    this.defaultScreenChannels[0]?.imageUrl ||
-                    "",
+                eyebrow: "Conexión",
+                title: "Servicio temporalmente no disponible",
+                body: "No he podido preparar esta lectura ahora mismo. Pulsa en `Pulso del mercado` para volver al panel general.",
             });
             this.ui.setChannelCounter(1, 1);
             this.ui.setChannelNavigationEnabled(false);
@@ -783,6 +1081,51 @@ export class ChatController {
             this.ui.userInput.focus();
             this.processing = false;
             void this.processQueue();
+        }
+    }
+
+    appendResponseBlocks(data) {
+        const appendedBlocks = [];
+
+        if (data.asset) {
+            const block = this.buildAssetPanel(data.asset, data.outlook);
+            appendedBlocks.push(block);
+            this.ui.appendBlock(block);
+        }
+
+        if (data.chart) {
+            const block = this.buildChartPanel(data.chart, data.asset || data.chart);
+            appendedBlocks.push(block);
+            this.ui.appendBlock(block);
+        }
+
+        if (data.comparison?.items?.length) {
+            const block = this.buildComparisonPanel(data.comparison);
+            appendedBlocks.push(block);
+            this.ui.appendBlock(block);
+        }
+
+        if (data.investment_plan) {
+            const block = this.buildInvestmentPlanPanel(data.investment_plan);
+            appendedBlocks.push(block);
+            this.ui.appendBlock(block);
+        }
+
+        if (data.articles?.length) {
+            const deck = this.buildMarketNewsDeck(data.articles, data.topic);
+            this.currentPhotos = deck.photoUrls;
+            this.brokenPhotoUrls.clear();
+            appendedBlocks.push(deck.block);
+            this.ui.appendBlock(deck.block);
+            this.ui.focusBlock(appendedBlocks[0] || deck.block);
+            return;
+        }
+
+        this.currentPhotos = [];
+        this.brokenPhotoUrls.clear();
+
+        if (appendedBlocks.length) {
+            this.ui.focusBlock(appendedBlocks[0]);
         }
     }
 }

@@ -6,5 +6,6 @@ __pycache__/
 sendgrid.env
 
 leads.csv
+investment_plans.csv
 app/backend/booking/bookings.db
 *.db-journal

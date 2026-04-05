@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="AI News Anchor API", version="2.0")
+    app = FastAPI(title="AI Inversionista API", version="3.0")
 
     setup_security(app)
     init_services()
