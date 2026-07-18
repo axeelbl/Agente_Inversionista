@@ -9,3 +9,14 @@ leads.csv
 investment_plans.csv
 app/backend/booking/bookings.db
 *.db-journal
+.env.*
+!*.env.example
+*.pem
+*.key
+id_rsa
+id_ed25519
+node_modules/
+.venv/
+dist/
+build/
+uvicorn_tmp.log
