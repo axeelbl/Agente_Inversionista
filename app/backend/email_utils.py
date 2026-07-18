@@ -2,83 +2,81 @@ import base64
 import html
 import os
 
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import (
-    Attachment,
-    Disposition,
-    FileContent,
-    FileName,
-    FileType,
-    Mail,
-)
+import httpx
 
 from .config import (
     INVESTMENT_PLANS_FILE,
     LEADS_FILE,
-    SENDGRID_API_KEY,
-    SENDGRID_FROM,
-    SENDGRID_TO,
+    RESEND_API_KEY,
+    RESEND_FROM,
+    RESEND_TO,
 )
 from .csv_utils import get_last_modified
 
 LAST_SENT_BY_FILE = {}
 
+RESEND_EMAILS_URL = "https://api.resend.com/emails"
+
+
+def _parse_recipients(recipients):
+    if not recipients:
+        return []
+    return [email.strip() for email in recipients.split(",") if email.strip()]
+
+
+def can_send_email():
+    return bool(RESEND_API_KEY and RESEND_FROM and RESEND_TO)
+
+
+def _post_resend(payload):
+    response = httpx.post(
+        RESEND_EMAILS_URL,
+        headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
+        json=payload,
+        timeout=30,
+    )
+    if response.is_error:
+        print("Error de Resend:", response.status_code, response.text)
+        response.raise_for_status()
+    return response
+
 
 def send_csv_email():
-    attachment_sources = [
-        (LEADS_FILE, "leads.csv"),
-        (INVESTMENT_PLANS_FILE, "investment_plans.csv"),
-    ]
+    if not can_send_email():
+        print("Falta configuracion de Resend, no se envia email")
+        return
+
+    attachment_sources = [(LEADS_FILE, "leads.csv"), (INVESTMENT_PLANS_FILE, "investment_plans.csv")]
 
     changed_sources = []
     for file_path, attachment_name in attachment_sources:
         if not os.path.exists(file_path):
             continue
-
         mtime = get_last_modified(file_path)
-        if mtime <= LAST_SENT_BY_FILE.get(file_path, 0):
-            continue
-
-        changed_sources.append((file_path, attachment_name, mtime))
+        if mtime > LAST_SENT_BY_FILE.get(file_path, 0):
+            changed_sources.append((file_path, attachment_name, mtime))
 
     if not changed_sources:
-        print("No hay CSV nuevos, no se envía email.")
         return
 
-    try:
-        message = Mail(
-            from_email=SENDGRID_FROM,
-            to_emails=SENDGRID_TO,
-            subject="AI Inversionista - Nuevos registros",
-            plain_text_content=(
-                "Hay nuevos registros de chat y/o planes de inversión enviados desde la app."
-            ),
-        )
+    attachments = []
+    for file_path, attachment_name, _mtime in changed_sources:
+        with open(file_path, "rb") as file_handle:
+            encoded_file = base64.b64encode(file_handle.read()).decode()
+        attachments.append({"filename": attachment_name, "content": encoded_file})
 
-        attachments = []
-        for file_path, attachment_name, _mtime in changed_sources:
-            with open(file_path, "rb") as file_handle:
-                encoded_file = base64.b64encode(file_handle.read()).decode()
+    payload = {
+        "from": RESEND_FROM,
+        "to": _parse_recipients(RESEND_TO),
+        "subject": 'AI Inversionista - Nuevos registros',
+        "text": 'Hay nuevos registros de chat y/o planes de inversion enviados desde la app.',
+        "attachments": attachments,
+    }
+    response = _post_resend(payload)
+    print("CSV enviado, status:", response.status_code)
 
-            attachments.append(
-                Attachment(
-                    file_content=FileContent(encoded_file),
-                    file_type=FileType("text/csv"),
-                    file_name=FileName(attachment_name),
-                    disposition=Disposition("attachment"),
-                )
-            )
-
-        message.attachment = attachments
-
-        client = SendGridAPIClient(SENDGRID_API_KEY)
-        response = client.send(message)
-        print("CSV enviado, status:", response.status_code)
-
-        for file_path, _attachment_name, mtime in changed_sources:
-            LAST_SENT_BY_FILE[file_path] = mtime
-    except Exception as exc:
-        print("Error enviando CSV:", exc)
+    for file_path, _attachment_name, mtime in changed_sources:
+        LAST_SENT_BY_FILE[file_path] = mtime
 
 
 def send_investment_plan_emails(payload: dict):
@@ -86,25 +84,20 @@ def send_investment_plan_emails(payload: dict):
     if not user_email:
         return
 
-    user_message = Mail(
-        from_email=SENDGRID_FROM,
-        to_emails=user_email,
-        subject="Tu plan de inversión IA",
-        plain_text_content=build_plan_plain_text(payload),
-        html_content=build_plan_html(payload, audience="user"),
-    )
-
-    admin_message = Mail(
-        from_email=SENDGRID_FROM,
-        to_emails=SENDGRID_TO,
-        subject=f"Nuevo plan de inversión enviado por {user_email}",
-        plain_text_content=build_plan_plain_text(payload, include_admin_note=True),
-        html_content=build_plan_html(payload, audience="admin"),
-    )
-
-    client = SendGridAPIClient(SENDGRID_API_KEY)
-    client.send(user_message)
-    client.send(admin_message)
+    _post_resend({
+        "from": RESEND_FROM,
+        "to": [user_email],
+        "subject": "Tu plan de inversion IA",
+        "text": build_plan_plain_text(payload),
+        "html": build_plan_html(payload, audience="user"),
+    })
+    _post_resend({
+        "from": RESEND_FROM,
+        "to": _parse_recipients(RESEND_TO),
+        "subject": f"Nuevo plan de inversion enviado por {user_email}",
+        "text": build_plan_plain_text(payload, include_admin_note=True),
+        "html": build_plan_html(payload, audience="admin"),
+    })
 
 
 def build_plan_html(payload: dict, audience: str = "user") -> str:
