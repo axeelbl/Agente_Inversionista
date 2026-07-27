@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <base href="/agents/inversionista/">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Inversionista | Analista IA de mercados</title>
-    <link rel="icon" type="image/png" href="/static/pictures/favicon.png">
+    <link rel="icon" type="image/png" href="/agents/inversionista/pictures/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/agents/inversionista/css/main.css">
+
+<style id="portfolio-back-style">
+.portfolio-back{position:fixed;top:18px;left:18px;z-index:9999;display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid rgba(255,255,255,.18);background:rgba(8,10,14,.78);backdrop-filter:blur(12px);color:#fff!important;text-decoration:none!important;font:600 14px/1.2 system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:-.01em;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.portfolio-back:hover{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.34)}
+@media(max-width:640px){.portfolio-back{top:12px;left:12px;padding:9px 12px;font-size:13px}}
+</style>
 </head>
 <body>
+<a class="portfolio-back" href="/" aria-label="Volver al portfolio principal">← Volver a axelbl.dev</a>
+
     <div class="app-shell">
         <header class="app-header">
             <div class="brand">
@@ -106,8 +115,8 @@
                                         <div class="assistant-stage-bg"></div>
                                         <div id="avatar">
                                             <div id="avatarHalo"></div>
-                                            <img id="baseFace" src="/static/pictures/eyes_open_mouth_closed.png" alt="Avatar del analista IA">
-                                            <img id="mouthOpenImg" src="/static/pictures/eyes_open_mouth_open.png" alt="">
+                                            <img id="baseFace" src="/agents/inversionista/pictures/eyes_open_mouth_closed.png" alt="Avatar del analista IA">
+                                            <img id="mouthOpenImg" src="/agents/inversionista/pictures/eyes_open_mouth_open.png" alt="">
                                         </div>
                                     </div>
 
@@ -369,6 +378,6 @@
         <button type="button" id="viewerRight" class="nav right" aria-label="Imagen siguiente">&#10095;</button>
     </div>
 
-    <script type="module" src="/static/js/main.js"></script>
+    <script type="module" src="/agents/inversionista/js/main.js"></script>
 </body>
 </html>

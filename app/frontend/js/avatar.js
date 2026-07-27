@@ -16,10 +16,10 @@ export class AvatarController {
         setInterval(() => {
             if (this.talkingInterval) return;
 
-            this.baseFace.src = "/static/pictures/eyes_closed_mouth_closed.png";
+            this.baseFace.src = "/agents/inversionista/pictures/eyes_closed_mouth_closed.png";
 
             setTimeout(() => {
-                this.baseFace.src = "/static/pictures/eyes_open_mouth_closed.png";
+                this.baseFace.src = "/agents/inversionista/pictures/eyes_open_mouth_closed.png";
             }, 200);
         }, 4000);
     }

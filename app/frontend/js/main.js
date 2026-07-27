@@ -1,4 +1,4 @@
-import { AvatarController } from "./avatar.js";
+import { AvatarController } from "./avatar.js?v=20260720-assets";
 import { ChatController } from "./chat.js";
 import { ChatUI } from "./ui.js";
 import { InvestorWorkspace } from "./workspace.js";
