@@ -27,10 +27,10 @@ const RISK_PROFILE_COPY = {
 export class InvestorWorkspace {
     constructor(chat) {
         this.chat = chat;
-        this.assetSearchUrl = "/asset-search";
-        this.assetQuoteUrl = "/asset-quote";
-        this.assetChartUrl = "/asset-chart";
-        this.planLeadUrl = "/investment-plan-lead";
+        this.assetSearchUrl = "/agents/inversionista/asset-search";
+        this.assetQuoteUrl = "/agents/inversionista/asset-quote";
+        this.assetChartUrl = "/agents/inversionista/asset-chart";
+        this.planLeadUrl = "/agents/inversionista/investment-plan-lead";
         this.state = {
             activeTab: "chat",
             selectedAsset: null,

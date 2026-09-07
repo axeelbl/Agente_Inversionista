@@ -1,5 +1,5 @@
 import { AvatarController } from "./avatar.js?v=20260720-assets";
-import { ChatController } from "./chat.js";
+import { ChatController } from "./chat.js?v=20260907-investor-routes";
 import { ChatUI } from "./ui.js";
 import { InvestorWorkspace } from "./workspace.js";
 
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("clearBtn"),
     );
 
-    const chat = new ChatController(ui, avatar, "/chat");
+    const chat = new ChatController(ui, avatar, "/agents/inversionista/chat");
     const workspace = new InvestorWorkspace(chat);
 
     document.querySelectorAll("[data-prompt]").forEach((button) => {

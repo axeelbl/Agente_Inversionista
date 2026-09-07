@@ -12,6 +12,7 @@ from .Prompts import INVESTMENT_ROUTING_PROMPT
 VALID_ACTIONS = {"SEARCH_MARKET", "GET_ASSET", "COMPARE_ASSETS", "INVESTMENT_PLAN", "CHAT"}
 VALID_RANGES = {"1D", "5D", "1M", "6M", "1Y", "5Y"}
 VALID_RESPONSE_STYLES = {"summary", "explain", "bull_bear", "plan", "comparison", "education"}
+GROQ_MODEL = "qwen/qwen3.8-27b"
 
 
 @lru_cache(maxsize=1)
@@ -23,7 +24,7 @@ def get_client() -> Groq:
 
 def ask_groq(messages, temperature=0.7):
     response = get_client().chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model=GROQ_MODEL,
         messages=messages,
         temperature=temperature,
     )
@@ -32,10 +33,14 @@ def ask_groq(messages, temperature=0.7):
 
 def decide_investment_action(user_message, history=None):
     history_excerpt = _build_history_excerpt(history)
+    fallback = _fallback_decision(user_message, history)
+
+    if fallback.get("needs_chart"):
+        return fallback
 
     try:
         response = get_client().chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model=GROQ_MODEL,
             messages=[
                 {"role": "system", "content": INVESTMENT_ROUTING_PROMPT},
                 {

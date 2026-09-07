@@ -15,8 +15,8 @@ export class ChatController {
         this.ui = ui;
         this.avatar = avatar;
         this.apiUrl = apiUrl;
-        this.liveFeedUrl = "/live-feed";
-        this.assetChartUrl = "/asset-chart";
+        this.liveFeedUrl = "/agents/inversionista/live-feed";
+        this.assetChartUrl = "/agents/inversionista/asset-chart";
 
         this.queue = [];
         this.processing = false;
