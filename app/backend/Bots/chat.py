@@ -27,6 +27,7 @@ def ask_groq(messages, temperature=0.7):
         model=GROQ_MODEL,
         messages=messages,
         temperature=temperature,
+        max_tokens=700,
     )
     return response.choices[0].message.content
 
@@ -52,6 +53,7 @@ def decide_investment_action(user_message, history=None):
                 },
             ],
             temperature=0,
+            max_tokens=300,
         )
     except Exception:
         return _fallback_decision(user_message, history)

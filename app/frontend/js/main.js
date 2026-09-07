@@ -1,5 +1,5 @@
 import { AvatarController } from "./avatar.js?v=20260720-assets";
-import { ChatController } from "./chat.js?v=20260907-investor-routes";
+import { ChatController } from "./chat.js?v=20260907-chart-focus";
 import { ChatUI } from "./ui.js";
 import { InvestorWorkspace } from "./workspace.js";
 

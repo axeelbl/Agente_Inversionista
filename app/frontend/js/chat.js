@@ -1088,6 +1088,7 @@ export class ChatController {
 
     appendResponseBlocks(data) {
         const appendedBlocks = [];
+        let preferredBlock = null;
 
         if (data.asset) {
             const block = this.buildAssetPanel(data.asset, data.outlook);
@@ -1099,6 +1100,7 @@ export class ChatController {
             const block = this.buildChartPanel(data.chart, data.asset || data.chart);
             appendedBlocks.push(block);
             this.ui.appendBlock(block);
+            preferredBlock = block;
         }
 
         if (data.comparison?.items?.length) {
@@ -1119,7 +1121,7 @@ export class ChatController {
             this.brokenPhotoUrls.clear();
             appendedBlocks.push(deck.block);
             this.ui.appendBlock(deck.block);
-            this.ui.focusBlock(appendedBlocks[0] || deck.block);
+            this.ui.focusBlock(preferredBlock || appendedBlocks[0] || deck.block);
             return;
         }
 
@@ -1127,7 +1129,7 @@ export class ChatController {
         this.brokenPhotoUrls.clear();
 
         if (appendedBlocks.length) {
-            this.ui.focusBlock(appendedBlocks[0]);
+            this.ui.focusBlock(preferredBlock || appendedBlocks[0]);
         }
     }
 }

@@ -137,12 +137,21 @@ async def handle_asset_request(user_message, history=None, decision=None):
         *build_history_messages(history),
         {"role": "user", "content": summary_request},
     ]
-    bot_reply = await asyncio.to_thread(ask_groq, messages, temperature=0.35)
-
     asset = analysis["asset"]
     chart = analysis.get("chart")
     articles = analysis.get("articles") or []
     outlook = analysis.get("outlook") or {}
+
+    if decision.get("needs_chart") and chart:
+        bot_reply = (
+            f"Aquí tienes la gráfica de {asset.get('name') or asset.get('symbol')} "
+            f"({asset.get('symbol')}) para el rango {chart.get('range')}."
+        )
+    else:
+        try:
+            bot_reply = await asyncio.to_thread(ask_groq, messages, temperature=0.35)
+        except Exception:
+            bot_reply = build_asset_outlook_body(asset, chart, outlook)
 
     channels = [
         build_asset_channel(
