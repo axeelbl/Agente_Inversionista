@@ -1,8 +1,9 @@
+import asyncio
 import time
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from app.backend.Bots.chat import decide_investment_action
 from app.backend.core.security import limiter
@@ -20,12 +21,12 @@ router = APIRouter()
 
 class HistoryItem(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(min_length=1, max_length=500)
 
 
 class MessageRequest(BaseModel):
-    user_message: str
-    history: list[HistoryItem] = Field(default_factory=list)
+    user_message: str = Field(min_length=1, max_length=500)
+    history: list[HistoryItem] = Field(default_factory=list, max_length=8)
 
 
 class AllocationItem(BaseModel):
@@ -33,21 +34,21 @@ class AllocationItem(BaseModel):
     name: str = Field(default="", max_length=120)
     type: str = Field(default="", max_length=40)
     weight_percent: float = Field(ge=0, le=100)
-    monthly_amount: float = Field(ge=0)
-    initial_amount: float = Field(ge=0)
+    monthly_amount: float = Field(ge=0, le=1_000_000_000)
+    initial_amount: float = Field(ge=0, le=1_000_000_000)
 
 
 class InvestmentPlanLeadRequest(BaseModel):
     name: str = Field(default="", max_length=120)
-    email: str = Field(..., min_length=3, max_length=160)
+    email: EmailStr
     consent: bool
     risk_profile: str = Field(default="", max_length=40)
-    monthly_contribution: float = Field(default=0, ge=0)
-    initial_capital: float = Field(default=0, ge=0)
-    horizon_years: float = Field(default=0, ge=0)
-    total_weight: float = Field(default=0, ge=0)
-    scenario_rates: dict[str, float] = Field(default_factory=dict)
-    allocations: list[AllocationItem] = Field(default_factory=list)
+    monthly_contribution: float = Field(default=0, ge=0, le=1_000_000_000)
+    initial_capital: float = Field(default=0, ge=0, le=1_000_000_000)
+    horizon_years: float = Field(default=0, ge=0, le=100)
+    total_weight: float = Field(default=0, ge=0, le=100)
+    scenario_rates: dict[str, float] = Field(default_factory=dict, max_length=10)
+    allocations: list[AllocationItem] = Field(default_factory=list, max_length=50)
     notes: str = Field(default="", max_length=500)
 
 
@@ -57,11 +58,8 @@ async def chat_endpoint(msg: MessageRequest, request: Request):
     user_message = msg.user_message.strip()
     history = [item.model_dump() for item in msg.history][-8:]
 
-    if len(user_message) > 500:
-        return {"bot_message": "Mensaje demasiado largo."}
-
     start_time = time.time()
-    decision = decide_investment_action(user_message, history)
+    decision = await asyncio.to_thread(decide_investment_action, user_message, history)
 
     def record_lead(bot_reply: str):
         meta = {
@@ -78,10 +76,16 @@ async def chat_endpoint(msg: MessageRequest, request: Request):
         except Exception as exc:
             print("Error enviando CSV:", exc)
 
-    if decision.get("action") == "CHAT":
-        response = await handle_chat(user_message, history)
-    else:
-        response = await handle_market_request(user_message, history, decision)
+    try:
+        if decision.get("action") == "CHAT":
+            response = await handle_chat(user_message, history)
+        else:
+            response = await handle_market_request(user_message, history, decision)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="El servicio de análisis no está configurado.",
+        ) from exc
 
     record_lead(response["bot_message"])
     return response

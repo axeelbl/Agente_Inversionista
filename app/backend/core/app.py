@@ -7,7 +7,6 @@ from fastapi.staticfiles import StaticFiles
 from app.backend.Bots.chat_routes import router as chat_router
 from app.backend.core.cors import setup_cors
 from app.backend.core.security import setup_security
-from app.backend.core.startup import init_services
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -16,7 +15,6 @@ def create_app() -> FastAPI:
     app = FastAPI(title="AI Inversionista API", version="3.0")
 
     setup_security(app)
-    init_services()
 
     app.include_router(chat_router)
 
@@ -34,5 +32,9 @@ def create_app() -> FastAPI:
         if os.path.exists(index_path):
             return FileResponse(index_path)
         return {"error": "Archivo index.html no encontrado."}
+
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
 
     return app

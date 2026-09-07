@@ -14,7 +14,7 @@ El proyecto combina un backend en FastAPI con un frontend estático en HTML, CSS
 - Comparativas entre activos como `VOO vs QQQ` o `Apple frente a Microsoft`.
 - Feed de noticias financieras con fuentes externas.
 - Planificador de inversión con perfiles conservador, moderado y agresivo.
-- Captura de leads y envío de planes por email mediante SendGrid.
+- Captura de leads y envío de planes por email mediante Resend.
 - Rate limiting y cabeceras básicas de seguridad.
 
 ## Estructura del proyecto
@@ -28,7 +28,7 @@ El proyecto combina un backend en FastAPI con un frontend estático en HTML, CSS
 │   │   ├── services/          # Servicios de chat y datos de mercado
 │   │   ├── config.py          # Variables de entorno y rutas de datos
 │   │   ├── csv_utils.py       # Persistencia local de leads y planes
-│   │   ├── email_utils.py     # Envíos por SendGrid
+│   │   ├── email_utils.py     # Envíos por Resend
 │   │   └── main.py            # Punto de entrada FastAPI
 │   └── frontend/
 │       ├── css/               # Estilos de la interfaz
@@ -43,7 +43,7 @@ El proyecto combina un backend en FastAPI con un frontend estático en HTML, CSS
 
 - Python 3.11 o superior recomendado.
 - Cuenta y API key de Groq para las respuestas de IA.
-- Cuenta y API key de SendGrid para enviar emails.
+- Cuenta y API key de Resend para enviar emails.
 - Opcional: API key de NewsAPI para mejorar la cobertura de noticias.
 
 ## Configuración local
@@ -65,15 +65,17 @@ pip install -r requirements.txt
 
 ```env
 GROQ_API_KEY=
-SENDGRID_API_KEY=
-SENDGRID_FROM=
-SENDGRID_TO=
+RESEND_API_KEY=
+RESEND_FROM=
+RESEND_TO=
 NEWSAPI_API_KEY=
 NEWS_LANGUAGE=es
 NEWS_COUNTRY=ES
 ```
 
 `NEWSAPI_API_KEY` es opcional. Si no existe, el backend intenta obtener noticias desde fuentes RSS públicas.
+También puedes copiar `.env.example`; las variables del sistema tienen prioridad
+sobre ese archivo local.
 
 ## Ejecutar la aplicación
 
@@ -96,6 +98,7 @@ FastAPI sirve el frontend desde `/` y los assets estáticos desde `/static`.
 | Método | Ruta | Descripción |
 | --- | --- | --- |
 | `GET` | `/` | Sirve la interfaz web principal. |
+| `GET` | `/health` | Comprueba el proceso sin llamar a servicios externos. |
 | `POST` | `/chat` | Procesa mensajes del usuario y devuelve respuesta del analista IA. |
 | `GET` | `/live-feed` | Devuelve un resumen actual de mercado y noticias. |
 | `GET` | `/asset-search?q=` | Busca activos por nombre o ticker. |
@@ -115,11 +118,13 @@ No subas claves, tokens, bases de datos locales ni CSVs con leads. Este repo ya 
 - bases de datos locales y archivos temporales de SQLite
 - `__pycache__/` y archivos `.pyc`
 
-Antes de commitear, revisa siempre:
+Antes de commitear, ejecuta:
 
 ```bash
-git status --short
-git diff --staged
+python -m compileall -q app tests
+python -m unittest discover -s tests -v
+find app/frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+git diff --check
 ```
 
 ## Notas de seguridad
@@ -145,5 +150,5 @@ La lógica principal está repartida así:
 - No commitear archivos de entorno ni credenciales.
 - No commitear CSVs con datos reales.
 - Mantener `requirements.txt` actualizado cuando cambien dependencias.
-- Probar al menos el arranque local con `uvicorn app.backend.main:app --reload`.
+- Ejecutar las pruebas locales; GitHub Actions repite las comprobaciones en cada push y pull request.
 - Revisar que `git status --short` solo muestre archivos relacionados con el cambio.

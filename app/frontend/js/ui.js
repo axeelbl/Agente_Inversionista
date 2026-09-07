@@ -472,7 +472,9 @@ export class ChatUI {
     setFeaturedLink(linkUrl, linkLabel = "Ver activo") {
         if (!this.featuredLink) return;
 
-        if (!linkUrl) {
+        const safeUrl = this.getSafeHttpUrl(linkUrl);
+
+        if (!safeUrl) {
             this.featuredLink.classList.add("hidden");
             this.featuredLink.removeAttribute("href");
             this.featuredImageLink?.removeAttribute("href");
@@ -480,11 +482,20 @@ export class ChatUI {
             return;
         }
 
-        this.featuredLink.href = linkUrl;
+        this.featuredLink.href = safeUrl;
         this.featuredLink.textContent = linkLabel;
         this.featuredLink.classList.remove("hidden");
-        this.featuredImageLink?.setAttribute("href", linkUrl);
+        this.featuredImageLink?.setAttribute("href", safeUrl);
         this.featuredImageLink?.classList.remove("is-disabled");
+    }
+
+    getSafeHttpUrl(value) {
+        try {
+            const url = new URL(value, window.location.origin);
+            return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+        } catch {
+            return "";
+        }
     }
 
     setFeaturedLoading(isLoading) {

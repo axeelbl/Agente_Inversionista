@@ -33,12 +33,14 @@ def setup_security(app):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "img-src 'self' data: https:; "
             "script-src 'self'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "font-src 'self';"
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com;"
         )
         return response
 

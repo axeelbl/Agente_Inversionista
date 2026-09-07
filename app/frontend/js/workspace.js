@@ -805,7 +805,11 @@ export class InvestorWorkspace {
 
             const meta = document.createElement("div");
             meta.className = "planner-asset-meta";
-            meta.innerHTML = `<strong>${item.name || item.symbol}</strong><span>${item.type || "Activo"}</span>`;
+            const assetName = document.createElement("strong");
+            assetName.textContent = item.name || item.symbol;
+            const assetType = document.createElement("span");
+            assetType.textContent = item.type || "Activo";
+            meta.append(assetName, assetType);
 
             assetCell.append(symbolButton, meta);
 

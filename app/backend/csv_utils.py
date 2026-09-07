@@ -1,10 +1,16 @@
 import csv
 import json
 import os
+import threading
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from .config import INVESTMENT_PLANS_FILE, LEADS_FILE
+
+
+_CSV_LOCK = threading.Lock()
+_DANGEROUS_CSV_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 
 def save_lead(user_message, bot_message, meta):
@@ -84,12 +90,21 @@ def get_last_modified(file_path: str):
 
 
 def _append_csv_row(file_path: str, headers: list[str], row: list[Any]):
-    file_exists = os.path.isfile(file_path)
+    path = Path(file_path)
+    sanitized_row = [_safe_csv_cell(value) for value in row]
 
-    with open(file_path, "a", newline="", encoding="utf-8") as file_handle:
-        writer = csv.writer(file_handle)
+    with _CSV_LOCK:
+        file_exists = path.is_file()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", newline="", encoding="utf-8") as file_handle:
+            writer = csv.writer(file_handle)
 
-        if not file_exists:
-            writer.writerow(headers)
+            if not file_exists:
+                writer.writerow(headers)
 
-        writer.writerow(row)
+            writer.writerow(sanitized_row)
+
+
+def _safe_csv_cell(value: Any) -> str:
+    text = str(value)
+    return f"'{text}" if text.startswith(_DANGEROUS_CSV_PREFIXES) else text

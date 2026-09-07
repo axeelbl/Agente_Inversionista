@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-load_dotenv(override=True)
+load_dotenv(BASE_DIR / ".env", override=False)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
@@ -18,5 +18,7 @@ RESEND_TO = os.getenv("RESEND_TO") or os.getenv("SENDGRID_TO")
 NEWSAPI_API_KEY = os.getenv("NEWSAPI_API_KEY")
 NEWS_LANGUAGE = os.getenv("NEWS_LANGUAGE", "es")
 NEWS_COUNTRY = os.getenv("NEWS_COUNTRY", "ES")
-LEADS_FILE = str(BASE_DIR / "leads.csv")
-INVESTMENT_PLANS_FILE = str(BASE_DIR / "investment_plans.csv")
+LEADS_FILE = str(Path(os.getenv("LEADS_FILE", BASE_DIR / "leads.csv")))
+INVESTMENT_PLANS_FILE = str(
+    Path(os.getenv("INVESTMENT_PLANS_FILE", BASE_DIR / "investment_plans.csv"))
+)

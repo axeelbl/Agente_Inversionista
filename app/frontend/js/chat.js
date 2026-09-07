@@ -982,13 +982,15 @@ export class ChatController {
             const footer = document.createElement("div");
             footer.className = "news-card-footer";
 
-            const link = document.createElement("a");
-            link.href = article.url;
-            link.target = "_blank";
-            link.rel = "noreferrer";
-            link.textContent = "Abrir fuente";
-
-            footer.appendChild(link);
+            const articleUrl = this.getCleanImageUrl(article.url);
+            if (articleUrl) {
+                const link = document.createElement("a");
+                link.href = articleUrl;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.textContent = "Abrir fuente";
+                footer.appendChild(link);
+            }
             body.append(meta, cardTitle, description, footer);
             card.appendChild(body);
             grid.appendChild(card);

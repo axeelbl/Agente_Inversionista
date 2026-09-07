@@ -25,7 +25,7 @@ async def handle_chat(user_message, history=None):
         {"role": "user", "content": user_message},
     ]
 
-    bot_reply = ask_groq(messages, temperature=0.55)
+    bot_reply = await asyncio.to_thread(ask_groq, messages, temperature=0.55)
     return build_response(bot_message=bot_reply)
 
 
@@ -85,7 +85,7 @@ async def handle_market_search_request(user_message, history=None, decision=None
         *build_history_messages(history),
         {"role": "user", "content": summary_request},
     ]
-    bot_reply = ask_groq(messages, temperature=0.35)
+    bot_reply = await asyncio.to_thread(ask_groq, messages, temperature=0.35)
 
     channels = []
     if asset:
@@ -137,7 +137,7 @@ async def handle_asset_request(user_message, history=None, decision=None):
         *build_history_messages(history),
         {"role": "user", "content": summary_request},
     ]
-    bot_reply = ask_groq(messages, temperature=0.35)
+    bot_reply = await asyncio.to_thread(ask_groq, messages, temperature=0.35)
 
     asset = analysis["asset"]
     chart = analysis.get("chart")
@@ -193,7 +193,7 @@ async def handle_comparison_request(user_message, history=None, decision=None):
         *build_history_messages(history),
         {"role": "user", "content": summary_request},
     ]
-    bot_reply = ask_groq(messages, temperature=0.35)
+    bot_reply = await asyncio.to_thread(ask_groq, messages, temperature=0.35)
 
     channels = [
         build_asset_channel(
@@ -221,7 +221,7 @@ async def handle_investment_plan_request(user_message, history=None, decision=No
         *build_history_messages(history),
         {"role": "user", "content": summary_request},
     ]
-    bot_reply = ask_groq(messages, temperature=0.35)
+    bot_reply = await asyncio.to_thread(ask_groq, messages, temperature=0.35)
 
     channels = [
         {

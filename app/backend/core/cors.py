@@ -5,6 +5,6 @@ def setup_cors(app):
         CORSMiddleware,
         allow_origins=["http://localhost", "http://127.0.0.1"],
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
     )

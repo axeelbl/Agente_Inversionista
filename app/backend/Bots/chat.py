@@ -1,5 +1,6 @@
 import json
 import re
+from functools import lru_cache
 
 from groq import Groq
 
@@ -8,15 +9,20 @@ from app.backend.services.market_service import detect_tickers_from_user_message
 
 from .Prompts import INVESTMENT_ROUTING_PROMPT
 
-client = Groq(api_key=GROQ_API_KEY)
-
 VALID_ACTIONS = {"SEARCH_MARKET", "GET_ASSET", "COMPARE_ASSETS", "INVESTMENT_PLAN", "CHAT"}
 VALID_RANGES = {"1D", "5D", "1M", "6M", "1Y", "5Y"}
 VALID_RESPONSE_STYLES = {"summary", "explain", "bull_bear", "plan", "comparison", "education"}
 
 
+@lru_cache(maxsize=1)
+def get_client() -> Groq:
+    if not GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY is not configured")
+    return Groq(api_key=GROQ_API_KEY)
+
+
 def ask_groq(messages, temperature=0.7):
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=messages,
         temperature=temperature,
@@ -27,20 +33,23 @@ def ask_groq(messages, temperature=0.7):
 def decide_investment_action(user_message, history=None):
     history_excerpt = _build_history_excerpt(history)
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {"role": "system", "content": INVESTMENT_ROUTING_PROMPT},
-            {
-                "role": "user",
-                "content": (
-                    f"Historial reciente:\n{history_excerpt}\n\n"
-                    f"Mensaje actual:\n{user_message}"
-                ),
-            },
-        ],
-        temperature=0,
-    )
+    try:
+        response = get_client().chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": INVESTMENT_ROUTING_PROMPT},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Historial reciente:\n{history_excerpt}\n\n"
+                        f"Mensaje actual:\n{user_message}"
+                    ),
+                },
+            ],
+            temperature=0,
+        )
+    except Exception:
+        return _fallback_decision(user_message, history)
 
     content = response.choices[0].message.content
     parsed = _parse_routing_json(content)
